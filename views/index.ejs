@@ -32,23 +32,17 @@
     
     <!-- Sidebar -->
     <aside class="sidebar">
-        <section class="sidebar-map">
-            <div id="map" class="map"></div>
+        <section class="sidebar-map-container">
+            <div id="globalMap" class="sidebar-map"></div>
         </section>
 
-        <section class="sidebar-addresses">
-            <h2 class="sidebar-section-title">Adresses de Référence</h2>
-            <div class="addresses-grid">
-                <% referenceAddresses.forEach(address => { %>
-                    <div class="small-address-card" data-id="<% address.id %>">
-                        <h3 class="address-card-title">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <%= address.name %>
-                        </h3>
-                        <p class="address-text"><%= address.address %></p>
-                    </div>
-                <% }) %>
-            </div>
+        <section class="sidebar-overview">
+            <% listings.forEach(listing => { %>
+                <a href="#listing-<%= listing.id %>" class="overview-item status-text-color-<%= listing.status %>">
+                    <span class="overview-value"><%= listing.title %></span>
+                </a>
+            <% }) %>
+            
         </section>
     </aside>
     <main class="main">
@@ -69,7 +63,7 @@
 
             <div class="listings-grid">
                 <% listings.forEach(listing => { %>
-                <div class="listing-card" data-id="<%= listing.id %>">
+                <div id="listing-<%= listing.id %>" class="listing-card" data-id="<%= listing.id %>">
                     <div class="card-header">
                         <div class="status-badge status-<%= listing.status %>">
                             <%= listing.status.replace('_', ' ') %>
@@ -143,35 +137,78 @@
                             <% if (listing.online) { %>
                                 <span class="detail-item <%= listing.online ? 'online' : 'offline' %>"><i class="fas fa-globe"></i> <%= listing.online ? 'Oui' : 'Non' %></span>
                             <% } %>
+                            <% if (listing.url) { %>
+                                <div class="external-link">
+                                    <a href="<%= listing.url %>" target="_blank" class="btn btn-primary">
+                                        <i class="fas fa-external-link-alt"></i> Voir l'annonce originale
+                                    </a>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <div class="comments-line">
+                            <h3><i class="fas fa-comments"></i> Commentaires personnels</h3>
+                            
+                            <form class="add-comment-form" onsubmit="addComment(event, '<%= listing.id %>')">
+                                <textarea placeholder="Ajouter un commentaire..." required></textarea>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Ajouter
+                                </button>
+                            </form>
+
+                            <div class="comments-list" id="commentsList">
+                                <% if (listing.comments && listing.comments.length > 0) { %>
+                                    <% listing.comments.forEach(comment => { %>
+                                    <div class="comment-item">
+                                        <i class="fas fa-comment"></i>
+                                        <span><%= comment %></span>
+                                    </div>
+                                    <% }) %>
+                                <% } else { %>
+                                <p class="no-comments">Aucun commentaire pour le moment.</p>
+                                <% } %>
+                            </div>
                         </div>
 
                         
                         <% if (referenceAddresses && referenceAddresses.length > 0) { %>
-                            <div class="travel-times-section">
+                            <div class="travel-times-line">
                                 <h3><i class="fas fa-clock"></i> Temps de trajet</h3>
                                 <div class="travel-times-grid">
                                     <% referenceAddresses.forEach(address => { %>
                                         <% const travelTime = listing.travel_times.find(tt => tt.reference_address_id === address.id) %>
                                         <div class="travel-time-card">
-                                            <div class="destination">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                                <%= address.name %>
-                                            </div>
-                                            <div class="time">
-                                                <% if (travelTime) { %>
-                                                    <%= travelTime.travel_time %> min
-                                                    <% if (travelTime.is_manual) { %>
-                                                    <span class="manual">(manuel)</span>
+                                            <div class="travel-time-card-header">
+                                                <div class="destination">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <%= address.name %>
+                                                </div>
+                                                <div class="time">
+                                                    <% if (travelTime) { %>
+                                                        <%= travelTime.travel_time %> min
+                                                        <% if (travelTime.is_manual) { %>
+                                                        <span class="manual">(manuel)</span>
+                                                        <% } %>
+                                                    <% } else { %>
+                                                        <button class="btn btn-outline calculate-btn" 
+                                                                onclick="calculateTravelTime('<%= listing.id %>', '<%= address.id %>')">
+                                                            Calculer
+                                                        </button>
                                                     <% } %>
-                                                <% } else { %>
-                                                    <button class="btn btn-outline calculate-btn" 
-                                                            onclick="calculateTravelTime('<%= listing.id %>', '<%= address.id %>')">
-                                                        Calculer
-                                                    </button>
-                                                <% } %>
+                                                </div>
                                             </div>
+                                            <div class="travel-route-map"></div>
                                         </div>
                                     <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+
+                        <% if (listing.description) { %>
+                            <div class="description-line">
+                                <h3><i class="fas fa-align-left"></i> Description</h3>
+                                <div class="description-text">
+                                    <%= listing.description %>
                                 </div>
                             </div>
                         <% } %>
@@ -190,8 +227,17 @@
                     </div>
 
                     <div class="card-actions">
-                        <button class="btn btn-secondary" onclick="viewListing('<%= listing.id %>')">
+                        <!--<button class="btn btn-secondary" onclick="viewListing('<%= listing.id %>')">
                             <i class="fas fa-eye"></i> Voir détails
+                        </button>-->
+                        <button class="btn btn-outline" onclick="changeStatus('<%= listing.id %>')">
+                            <i class="fas fa-tag"></i> Changer le statut
+                        </button>
+                        <button class="btn btn-outline" onclick="toggleOnline('<%= listing.id %>')">
+                            <i class="fas fa-globe"></i> <%= listing.online ? 'Marquer hors ligne' : 'Marquer en ligne' %>
+                        </button>
+                        <button class="btn btn-outline" onclick="scheduleAppointment('<%= listing.id %>')">
+                            <i class="fas fa-calendar-plus"></i> Programmer un RDV
                         </button>
                         <button class="btn btn-outline" onclick="editListing('<%= listing.id %>')">
                             <i class="fas fa-edit"></i> Modifier
@@ -389,6 +435,48 @@
             </form>
         </div>
     </div>
+
+    <div id="statusModalOverlay" class="status-modal-overlay" onclick="closeStatusModal()"></div>
+    
+    <div id="statusModal" class="status-modal">
+        <div class="status-options">
+            <button class="status-option" onclick="selectStatus('to_contact')">
+                <span class="status-badge status-to_contact">À contacter</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('contacting')">
+                <span class="status-badge status-contacting">En contact</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('apt')">
+                <span class="status-badge status-apt">RDV prévu</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('visited')">
+                <span class="status-badge status-visited">Visite faite</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('ended')">
+                <span class="status-badge status-ended">Terminée</span>
+            </button>
+        </div>
+    </div>
     <script src="/js/main.js"></script>
+    <script>
+        // Initialisation de la carte si les coordonnées sont disponibles
+        
+            document.addEventListener('DOMContentLoaded', function() {
+                const map = L.map('globalMap').setView([45.166672, 5.71667], 11);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                <% listings.forEach(listing => { %>
+                    <% if (listing.latitude && listing.longitude) { %>
+                        L.marker([<%= listing.latitude %>, <%= listing.longitude %>])
+                            .addTo(map)
+                            .bindPopup('<%= listing.title %>')
+                            .openPopup();
+                    <% } %>
+                <% }) %>
+            });
+    </script>
 </body>
 </html>

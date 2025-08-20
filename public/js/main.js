@@ -367,7 +367,6 @@ function initializeListingMap() {
 
             L.marker([lat, lng])
                 .addTo(map)
-                .bindPopup(title)
                 .openPopup();
         }
     }
@@ -672,6 +671,132 @@ document.addEventListener('keydown', function(e) {
         document.querySelectorAll('.modal.active').forEach(modal => {
             modal.classList.remove('active');
         });
+    }
+});
+
+// Variables globales pour la modal de statut
+let currentStatusListingId = null;
+
+// Fonction pour ouvrir la modal de changement de statut
+function changeStatus(listingId) {
+    currentStatusListingId = listingId;
+    
+    // Trouver le bouton qui a été cliqué
+    const button = event.target.closest('.btn');
+    const modal = document.getElementById('statusModal');
+    const overlay = document.getElementById('statusModalOverlay');
+    
+    // Calculer la position de la modal
+    const buttonRect = button.getBoundingClientRect();
+    const modalWidth = 200; // Largeur approximative de la modal
+    
+    // Positionner la modal au-dessus du bouton, centrée
+    modal.style.left = `${buttonRect.left + (buttonRect.width / 2) - (modalWidth / 2)}px`;
+    modal.style.top = `${buttonRect.top}px`; // 10px au-dessus du bouton
+    
+    // Ajuster si la modal dépasse de l'écran
+    const modalRect = modal.getBoundingClientRect();
+    if (modalRect.left < 10) {
+        modal.style.left = '10px';
+    }
+    if (modalRect.right > window.innerWidth - 10) {
+        modal.style.left = `${window.innerWidth - modalWidth - 10}px`;
+    }
+    
+    // Afficher la modal et l'overlay
+    overlay.classList.add('active');
+    modal.classList.add('active');
+    
+    // Prévenir la propagation pour éviter la fermeture immédiate
+    event.stopPropagation();
+}
+
+// Fonction pour fermer la modal de statut
+function closeStatusModal() {
+    const modal = document.getElementById('statusModal');
+    const overlay = document.getElementById('statusModalOverlay');
+    
+    modal.classList.remove('active');
+    overlay.classList.remove('active');
+    currentStatusListingId = null;
+}
+
+// Fonction pour sélectionner un statut
+async function selectStatus(newStatus) {
+    if (!currentStatusListingId) return;
+    
+    try {
+        showNotification('Mise à jour du statut...', 'info');
+        
+        const response = await fetch(`/listing/${currentStatusListingId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (response.ok) {
+            // Mettre à jour le badge de statut dans le DOM
+            const listingCard = document.querySelector(`[data-id="${currentStatusListingId}"]`);
+            if (listingCard) {
+                const statusBadge = listingCard.querySelector('.status-badge');
+                if (statusBadge) {
+                    // Supprimer les anciennes classes de statut
+                    statusBadge.className = statusBadge.className.replace(/status-\w+/g, '');
+                    
+                    // Ajouter la nouvelle classe de statut
+                    statusBadge.classList.add(`status-${newStatus}`);
+                    
+                    // Mettre à jour le texte
+                    const statusTexts = {
+                        'a_contacter': 'À contacter',
+                        'en_contact': 'En contact', 
+                        'rdv_prevu': 'RDV prévu',
+                        'visite_faite': 'Visite faite',
+                        'terminee': 'Terminée'
+                    };
+                    
+                    statusBadge.textContent = statusTexts[newStatus] || newStatus;
+                    
+                    // Animation de mise à jour
+                    statusBadge.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        statusBadge.style.transform = 'scale(1)';
+                    }, 200);
+                }
+            }
+            
+            showNotification('Statut mis à jour avec succès', 'success');
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erreur lors de la mise à jour');
+        }
+    } catch (error) {
+        console.error('Error updating status:', error);
+        showNotification(error.message, 'error');
+    }
+    
+    // Fermer la modal
+    closeStatusModal();
+}
+
+// Fermer la modal si on clique ailleurs
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('statusModal');
+    const overlay = document.getElementById('statusModalOverlay');
+    
+    if (modal && modal.classList.contains('active') && 
+        !modal.contains(e.target) && 
+        !e.target.closest('[onclick*="changeStatus"]')) {
+        closeStatusModal();
+    }
+});
+
+// Fermer la modal avec Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeStatusModal();
     }
 });
 

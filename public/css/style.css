@@ -84,11 +84,11 @@ header {
     background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     box-shadow: var(--shadow-xl);
-    padding: var(--space-4) var(--space-8);
+    padding: var(--space-2) var(--space-6);
     position: fixed;
     top: 0;
     width: 100%;
-    height: 17%;
+    height: 13%;
     z-index: 1100;
     display: flex;
     justify-content: space-around;
@@ -99,6 +99,11 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    font-size: 70%;
+}
+
+.header-title h1 {
+    margin: 0;
 }
 
 .header-nav {
@@ -111,7 +116,7 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-4) var(--space-6);
+    padding: var(--space-2) var(--space-4);
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     transition: all var(--transition-fast);
@@ -134,12 +139,13 @@ header {
 
 .sidebar {
     position: fixed;
-    top: 17%;
+    top: 13%;
     width: 25%;
     color: white;
     box-shadow: 8px 0 24px -4px rgb(0 0 0 / 0.15);
     height: 83%;
     overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .sidebar-section-title {
@@ -152,13 +158,29 @@ header {
     -webkit-text-fill-color: transparent;
 }
 
-.sidebar-map {
+.sidebar-map-container {
     height: 300px;
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-2);
 }
 
-.sidebar-addresses {
+.sidebar-map {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.sidebar-overview {
     padding: var(--space-4);
+    width: 100%;
+    color: black;
+}
+
+.overview-item {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 900;
+    text-decoration: none;
 }
 
 /* Main */
@@ -167,7 +189,7 @@ header {
     height: 83%;
     position: fixed;
     right: 0;
-    top: 17%;
+    top: 13%;
     overflow-y: scroll;
     padding: var(--space-4) var(--space-6);
 }
@@ -198,7 +220,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-8);
+    margin-bottom: var(--space-5);
     flex-wrap: wrap;
     gap: var(--space-4);
 }
@@ -256,7 +278,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-4);
+    padding: var(--space-2) var(--space-4);
     background: var(--gradient-light);
 }
 
@@ -268,29 +290,165 @@ header {
     text-transform: capitalize;
 }
 
-.status-a_contacter {
+.status-to_contact {
     background: #dbeafe;
     color: #1d4ed8;
 }
 
-.status-en_contact {
-    background: #fef3c7;
+.status-contacting {
+    background: #ffeb9d;
     color: #92400e;
 }
 
-.status-rdv_prevu {
+.status-apt {
     background: #d1fae5;
     color: #065f46;
 }
 
-.status-visite_faite {
+.status-visited {
     background: #e0e7ff;
     color: #3730a3;
 }
 
-.status-terminee {
+.status-ended {
     background: #f3f4f6;
     color: var(--gray-600);
+}
+
+.status-offline {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.status-text-color-to_contact {
+    color: #1d4ed8;
+}
+
+.status-text-color-contacting {
+    color: #92400e;
+}
+
+.status-text-color-apt {
+    color: #065f46;
+}
+
+.status-text-color-visited {
+    color: #3730a3;
+}
+
+.status-text-color-ended {
+    color: var(--gray-600);
+}
+
+.status-text-color-offline {
+    color: #b91c1c;
+}
+
+/* Modal de changement de statut */
+.status-modal {
+    position: absolute;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    padding: 16px;
+    z-index: 1000;
+    border: 1px solid #e5e7eb;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease-out;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.status-modal.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.status-modal::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+}
+
+.status-modal::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-bottom: 9px solid #e5e7eb;
+    z-index: -1;
+}
+
+.status-modal-header {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 12px;
+    font-size: 0.875rem;
+}
+
+.status-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.status-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.status-option:hover {
+    background: #f3f4f6;
+}
+
+.status-option .status-badge {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
+.status-option-text {
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+/* Overlay pour fermer la modal */
+.status-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 999;
+    display: none;
+}
+
+.status-modal-overlay.active {
+    display: block;
 }
 
 .vote-controls {
@@ -361,6 +519,7 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-4);
+    margin-bottom: var(--space-4);
 }
 
 .card-title-images-side {
@@ -368,10 +527,10 @@ header {
 }
 
 .card-content h3 {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--gray-800);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
     line-height: 1.3;
 }
 
@@ -483,6 +642,13 @@ header {
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
+}
+
+.travel-times-line, .description-line, .comments-line {
+    background-color: var(--gray-50);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-2);
 }
 
 /* Buttons */
@@ -796,10 +962,10 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--gray-800);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-2);
 }
 
 .location-text,
@@ -819,13 +985,16 @@ header {
 }
 
 .travel-time-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: var(--space-4);
     background: var(--gray-50);
     border-radius: var(--radius);
     border: 1px solid var(--gray-200);
+}
+
+.travel-time-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .destination {
@@ -852,6 +1021,15 @@ header {
     font-size: 0.75rem;
     color: var(--gray-500);
     font-weight: 400;
+}
+
+.travel-route-map {
+    height: 200px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-top: var(--space-4);
+    display: none;
 }
 
 /* Comments */
@@ -894,7 +1072,7 @@ header {
     color: var(--gray-500);
     font-style: italic;
     text-align: center;
-    padding: var(--space-6);
+    padding: var(--space-2);
 }
 
 /* Sidebar Cards */
@@ -970,6 +1148,7 @@ header {
     gap: var(--space-6);
     margin-bottom: var(--space-8);
     width: 100%;
+    overflow: hidden;
 }
 
 .address-card {
@@ -987,6 +1166,7 @@ header {
     box-shadow: var(--shadow);
     transition: all var(--transition-normal);
     width: 100%;
+    overflow: hidden;
 }
 
 .address-card:hover {
@@ -1002,6 +1182,7 @@ header {
     font-weight: 700;
     color: var(--gray-800);
     margin-bottom: var(--space-3);
+    width: 100%;
 }
 
 .small-address-card .address-card-title {
@@ -1015,13 +1196,16 @@ header {
 
 .address-text {
     color: var(--gray-600);
-    margin-bottom: var(--space-4);
     line-height: 1.5;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
-
 
 .small-address-card .address-text {
     margin: 0;
+    width: 100%;
 }
 
 .address-actions {
@@ -1080,7 +1264,7 @@ header {
 }
 
 .appointment-details h3 {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--gray-800);
     margin-bottom: var(--space-2);

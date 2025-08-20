@@ -56,57 +56,57 @@ class Database {
     initDatabase() {
         const queries = [
             `CREATE TABLE IF NOT EXISTS reference_addresses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                address TEXT NOT NULL,
-                latitude REAL,
-                longitude REAL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            address TEXT NOT NULL,
+            latitude REAL,
+            longitude REAL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS listings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                url TEXT,
-                title TEXT,
-                type TEXT,
-                rooms INTEGER,
-                location TEXT,
-                address TEXT,
-                latitude REAL,
-                longitude REAL,
-                images TEXT,
-                size REAL,
-                floor INTEGER,
-                price REAL,
-                charges REAL,
-                description TEXT,
-                agency_contact TEXT,
-                conditions TEXT,
-                dpe TEXT,
-                heating TEXT,
-                status TEXT DEFAULT 'a_contacter',
-                votes INTEGER DEFAULT 0,
-                online BOOLEAN DEFAULT 1,
-                appointment_date DATETIME,
-                appointment_notes TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT,
+            title TEXT,
+            type TEXT,
+            rooms INTEGER,
+            location TEXT,
+            address TEXT,
+            latitude REAL,
+            longitude REAL,
+            images TEXT,
+            size REAL,
+            floor INTEGER,
+            price REAL,
+            charges REAL,
+            description TEXT,
+            agency_contact TEXT,
+            conditions TEXT,
+            dpe TEXT,
+            heating TEXT,
+            status TEXT CHECK(status IN ('to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')) DEFAULT 'to_contact',
+            votes INTEGER DEFAULT 0,
+            online BOOLEAN DEFAULT 1,
+            appointment_date DATETIME,
+            appointment_notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`,
             `CREATE TABLE IF NOT EXISTS comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                listing_id INTEGER,
-                content TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (listing_id) REFERENCES listings (id) ON DELETE CASCADE
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            listing_id INTEGER,
+            content TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (listing_id) REFERENCES listings (id) ON DELETE CASCADE
             )`,
             `CREATE TABLE IF NOT EXISTS travel_times (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                listing_id INTEGER,
-                reference_address_id INTEGER,
-                travel_time INTEGER,
-                is_manual BOOLEAN DEFAULT 0,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (listing_id) REFERENCES listings (id) ON DELETE CASCADE,
-                FOREIGN KEY (reference_address_id) REFERENCES reference_addresses (id) ON DELETE CASCADE
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            listing_id INTEGER,
+            reference_address_id INTEGER,
+            travel_time INTEGER,
+            is_manual BOOLEAN DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (listing_id) REFERENCES listings (id) ON DELETE CASCADE,
+            FOREIGN KEY (reference_address_id) REFERENCES reference_addresses (id) ON DELETE CASCADE
             )`
         ];
 
@@ -233,6 +233,10 @@ class Database {
         
         const result = await this.get('SELECT votes FROM listings WHERE id = ?', [id]);
         return result.votes;
+    }
+
+    async updateStatus(id, status) {
+        return await this.run('UPDATE listings SET status = ? WHERE id = ?', [status, id]);
     }
 
     // === MÉTHODES POUR LES COMMENTAIRES ===

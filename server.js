@@ -5,6 +5,10 @@ const multer = require('multer');
 const fs = require('fs');
 const axios = require('axios');
 const Database = require('./database');
+const dotenv = require('dotenv');
+
+// Chargement des variables d'environnement
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -183,6 +187,23 @@ app.post('/listing/:id/comment', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur lors de l\'ajout du commentaire' });
+    }
+});
+
+app.post('/listing/:id/status', async (req, res) => {
+    try {
+        const listingId = req.params.id;
+        const { status } = req.body;
+
+        if (!['to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'].includes(status)) {
+            return res.status(400).json({ error: 'Statut invalide' });
+        }
+
+        await db.updateStatus(listingId, status);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour du statut' });
     }
 });
 
