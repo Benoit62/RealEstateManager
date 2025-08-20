@@ -1,0 +1,702 @@
+// Global variables
+let referenceMap = null;
+let currentEditingListing = null;
+
+// DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+});
+
+function initializeApp() {
+    // Initialize reference addresses
+    loadReferenceAddresses();
+    
+    // Initialize map if container exists
+    if (document.getElementById('referenceMap')) {
+        initReferenceMap();
+    }
+
+    initializeListingMap();
+
+    // Setup form handlers
+    setupFormHandlers();
+}
+
+// Navigation functions
+function showSection(sectionName) {
+    // Hide all sections
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show target section
+    const targetSection = document.getElementById(sectionName + '-section');
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+    
+    // Update navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    const activeNavItem = document.querySelector(`[onclick="showSection('${sectionName}')"]`);
+    if (activeNavItem) {
+        activeNavItem.classList.add('active');
+    }
+    
+    // Special handling for reference addresses section
+    if (sectionName === 'reference-addresses') {
+        setTimeout(() => {
+            if (referenceMap) {
+                referenceMap.invalidateSize();
+            }
+        }, 100);
+    }
+}
+
+// Sorting function
+function handleSort() {
+    const sortSelect = document.getElementById('sortSelect');
+    const sortValue = sortSelect.value;
+    
+    window.location.href = `/?sort=${sortValue}`;
+}
+
+// Voting functions
+async function vote(listingId, direction) {
+    try {
+        const response = await fetch(`/listing/${listingId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ direction })
+        });
+        
+        const data = await response.json();
+        
+        if (data.votes !== undefined) {
+            // Update vote count in all places
+            const voteCountElements = document.querySelectorAll(`[data-id="${listingId}"] .vote-count, #voteCount`);
+            voteCountElements.forEach(element => {
+                element.textContent = data.votes;
+                
+                // Add animation
+                element.style.transform = 'scale(1.2)';
+                element.style.color = direction === 'up' ? '#10b981' : '#ef4444';
+                
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                    element.style.color = '';
+                }, 200);
+            });
+        }
+    } catch (error) {
+        console.error('Error voting:', error);
+        showNotification('Erreur lors du vote', 'error');
+    }
+}
+
+// Listing management functions
+function viewListing(listingId) {
+    window.location.href = `/listing/${listingId}`;
+}
+
+function editListing(listingId) {
+    // Implementation for editing listing
+    showNotification('Fonction d\'édition en développement', 'info');
+}
+
+async function deleteListing(listingId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/listing/${listingId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Remove from DOM
+            const listingCard = document.querySelector(`[data-id="${listingId}"]`);
+            if (listingCard) {
+                listingCard.style.opacity = '0';
+                listingCard.style.transform = 'scale(0.8)';
+                
+                setTimeout(() => {
+                    listingCard.remove();
+                    showNotification('Annonce supprimée avec succès', 'success');
+                }, 300);
+            } else {
+                // If on detail page, redirect to home
+                window.location.href = '/';
+            }
+        } else {
+            throw new Error('Erreur lors de la suppression');
+        }
+    } catch (error) {
+        console.error('Error deleting listing:', error);
+        showNotification('Erreur lors de la suppression', 'error');
+    }
+}
+
+// Comments functions
+async function addComment(event, listingId) {
+    event.preventDefault();
+    
+    const textarea = event.target.querySelector('textarea');
+    const content = textarea.value.trim();
+    
+    if (!content) {
+        showNotification('Le commentaire ne peut pas être vide', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/listing/${listingId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content })
+        });
+        
+        if (response.ok) {
+            // Add comment to DOM
+            const commentsList = document.getElementById('commentsList');
+            const noCommentsMsg = commentsList.querySelector('.no-comments');
+            
+            if (noCommentsMsg) {
+                noCommentsMsg.remove();
+            }
+            
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment-item';
+            commentDiv.innerHTML = `
+                <i class="fas fa-comment"></i>
+                <span>${escapeHtml(content)}</span>
+            `;
+            
+            // Add animation
+            commentDiv.style.opacity = '0';
+            commentDiv.style.transform = 'translateX(-20px)';
+            commentsList.appendChild(commentDiv);
+            
+            setTimeout(() => {
+                commentDiv.style.opacity = '1';
+                commentDiv.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Clear textarea
+            textarea.value = '';
+            
+            showNotification('Commentaire ajouté avec succès', 'success');
+        } else {
+            throw new Error('Erreur lors de l\'ajout');
+        }
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        showNotification('Erreur lors de l\'ajout du commentaire', 'error');
+    }
+}
+
+// Reference addresses functions
+async function loadReferenceAddresses() {
+    try {
+        const response = await fetch('/api/reference-addresses');
+        const addresses = await response.json();
+        
+        renderReferenceAddresses(addresses);
+        updateReferenceMap(addresses);
+    } catch (error) {
+        console.error('Error loading addresses:', error);
+    }
+}
+
+function renderReferenceAddresses(addresses) {
+    const grid = document.getElementById('addressesGrid');
+    if (!grid) return;
+    
+    if (addresses.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-map-marker-alt"></i>
+                <h3>Aucune adresse de référence</h3>
+                <p>Ajoutez jusqu'à 4 adresses importantes pour calculer les temps de trajet.</p>
+                <button class="btn btn-primary" onclick="showAddAddressModal()">
+                    <i class="fas fa-plus"></i> Ajouter une adresse
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = addresses.map(address => `
+        <div class="address-card" data-id="${address.id}">
+            <h3 class="address-card-title">
+                <i class="fas fa-map-marker-alt"></i>
+                ${escapeHtml(address.name)}
+            </h3>
+            <p class="address-text">${escapeHtml(address.address)}</p>
+            <div class="address-actions">
+                <button class="btn btn-outline" onclick="editAddress(${address.id})">
+                    <i class="fas fa-edit"></i> Modifier
+                </button>
+                <button class="btn btn-danger" onclick="deleteAddress(${address.id})">
+                    <i class="fas fa-trash"></i> Supprimer
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function initReferenceMap() {
+    const mapContainer = document.getElementById('referenceMap');
+    if (!mapContainer) return;
+    
+    referenceMap = L.map('referenceMap').setView([48.8566, 2.3522], 15); // Paris par défaut
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(referenceMap);
+}
+
+function updateReferenceMap(addresses) {
+    if (!referenceMap) return;
+    
+    // Clear existing markers
+    referenceMap.eachLayer(layer => {
+        if (layer instanceof L.Marker) {
+            referenceMap.removeLayer(layer);
+        }
+    });
+    
+    if (addresses.length === 0) return;
+    
+    const bounds = [];
+    const colors = ['#f97316', '#fbbf24', '#10b981', '#3b82f6'];
+    
+    addresses.forEach((address, index) => {
+        if (address.latitude && address.longitude) {
+            const marker = L.marker([address.latitude, address.longitude])
+                .addTo(referenceMap)
+                .bindPopup(`
+                    <div class="marker-popup">
+                        <strong>${escapeHtml(address.name)}</strong><br>
+                        ${escapeHtml(address.address)}
+                    </div>
+                `);
+            
+            bounds.push([address.latitude, address.longitude]);
+        }
+    });
+    
+    if (bounds.length > 0) {
+        if (bounds.length === 1) {
+            referenceMap.setView(bounds[0], 15);
+        } else {
+            referenceMap.fitBounds(bounds, { padding: [20, 20] });
+        }
+    }
+}
+
+function showAddAddressModal() {
+    const modal = document.getElementById('addAddressModal');
+    modal.classList.add('active');
+    
+    // Reset form
+    const form = document.getElementById('addAddressForm');
+    form.reset();
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('active');
+}
+
+async function editAddress(addressId) {
+    showNotification('Fonction d\'édition d\'adresse en développement', 'info');
+}
+
+async function deleteAddress(addressId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette adresse ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/reference-addresses/${addressId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadReferenceAddresses();
+            showNotification('Adresse supprimée avec succès', 'success');
+        } else {
+            throw new Error('Erreur lors de la suppression');
+        }
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        showNotification('Erreur lors de la suppression', 'error');
+    }
+}
+
+function initializeListingMap() {
+    const mapElements = document.getElementsByClassName("listing-map");
+    if (!mapElements) return;
+
+    for (let i = 0; i < mapElements.length; i++) {
+        const element = mapElements[i];
+        // Process each map element
+
+        const lat = parseFloat(element.dataset.lat);
+        const lng = parseFloat(element.dataset.lng);
+        const title = element.dataset.title;
+        const mapId = element.id;
+
+        if (!lat || !lng) return;
+
+        console.log("Initializing map for listing:", mapId, "at coordinates:", lat, lng);
+        if (document.getElementById(mapId)) {
+            console.log("Initializing map for listing:", mapId);
+            const map = L.map(mapId).setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup(title)
+                .openPopup();
+        }
+    }
+}
+
+// Form handlers
+function setupFormHandlers() {
+    // Add address form
+    const addAddressForm = document.getElementById('addAddressForm');
+    if (addAddressForm) {
+        addAddressForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const addressData = {
+                name: formData.get('name'),
+                address: formData.get('address')
+            };
+            
+            // Geocode address
+            try {
+                const geoResponse = await fetch('/api/geocode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ address: addressData.address })
+                });
+                
+                if (geoResponse.ok) {
+                    const geoData = await geoResponse.json();
+                    addressData.latitude = geoData.latitude;
+                    addressData.longitude = geoData.longitude;
+                    addressData.address = geoData.address; // Use normalized address
+                }
+            } catch (error) {
+                console.warn('Geocoding failed, using manual address');
+            }
+            
+            // Save address
+            try {
+                const response = await fetch('/api/reference-addresses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(addressData)
+                });
+                
+                if (response.ok) {
+                    closeModal('addAddressModal');
+                    loadReferenceAddresses();
+                    showNotification('Adresse ajoutée avec succès', 'success');
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Erreur lors de l\'ajout');
+                }
+            } catch (error) {
+                console.error('Error adding address:', error);
+                showNotification(error.message, 'error');
+            }
+        });
+    }
+}
+
+// Geocoding functions
+async function geocodeAddress() {
+    const addressInput = document.getElementById('address');
+    const address = addressInput.value.trim();
+    
+    if (!address) {
+        showNotification('Veuillez saisir une adresse', 'error');
+        return;
+    }
+    
+    try {
+        showNotification('Géolocalisation en cours...', 'info');
+        
+        const response = await fetch('/api/geocode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ address })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+
+            console.log(data)
+            
+            // Update form fields
+            document.getElementById('latitude').value = data.latitude;
+            document.getElementById('longitude').value = data.longitude;
+            addressInput.value = data.address;
+            
+            showNotification('Adresse géolocalisée avec succès', 'success');
+        } else {
+            throw new Error('Adresse non trouvée');
+        }
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        showNotification('Impossible de géolocaliser cette adresse', 'error');
+    }
+}
+
+// Travel time calculation
+async function calculateTravelTime(listingId, addressId) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calcul...';
+    button.disabled = true;
+    
+    try {
+        // Get listing coordinates (this would need to be passed from the server)
+        const listingResponse = await fetch(`/api/travel-time/`, {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ listingId, addressId })
+        });
+
+        const travelData = await listingResponse.json();
+
+        if (travelData.error) {
+            throw new Error(travelData.error);
+        }
+
+        setTimeout(() => {
+            button.innerHTML = `${travelData.travelTime} min`;
+            button.disabled = false;
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Error calculating travel time:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        showNotification('Erreur lors du calcul', 'error');
+    }
+}
+
+// Detail page functions
+function changeMainImage(src, thumbnail) {
+    const mainImage = document.getElementById('mainImage');
+    if (mainImage) {
+        mainImage.src = src;
+        
+        // Update thumbnail active state
+        document.querySelectorAll('.thumbnail').forEach(thumb => {
+            thumb.classList.remove('active');
+        });
+        thumbnail.classList.add('active');
+    }
+}
+
+function changeStatus(listingId) {
+    // Implementation for changing status
+    showNotification('Fonction de changement de statut en développement', 'info');
+}
+
+function toggleOnline(listingId) {
+    // Implementation for toggling online status
+    showNotification('Fonction de basculement en ligne/hors ligne en développement', 'info');
+}
+
+function scheduleAppointment(listingId) {
+    // Implementation for scheduling appointment
+    showNotification('Fonction de planification de rendez-vous en développement', 'info');
+}
+
+// Utility functions
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    
+    const icon = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-triangle',
+        warning: 'fa-exclamation-circle',
+        info: 'fa-info-circle'
+    }[type] || 'fa-info-circle';
+    
+    notification.innerHTML = `
+        <i class="fas ${icon}"></i>
+        <span>${escapeHtml(message)}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add styles if not already added
+    if (!document.querySelector('#notification-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'notification-styles';
+        styles.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                padding: 16px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                z-index: 10000;
+                min-width: 300px;
+                max-width: 500px;
+                animation: slideInRight 0.3s ease-out;
+                border-left: 4px solid;
+            }
+            
+            .notification-success { border-left-color: #10b981; }
+            .notification-error { border-left-color: #ef4444; }
+            .notification-warning { border-left-color: #f59e0b; }
+            .notification-info { border-left-color: #3b82f6; }
+            
+            .notification i:first-child {
+                font-size: 18px;
+            }
+            
+            .notification-success i:first-child { color: #10b981; }
+            .notification-error i:first-child { color: #ef4444; }
+            .notification-warning i:first-child { color: #f59e0b; }
+            .notification-info i:first-child { color: #3b82f6; }
+            
+            .notification span {
+                flex: 1;
+                font-weight: 500;
+                color: #374151;
+            }
+            
+            .notification-close {
+                background: none;
+                border: none;
+                color: #6b7280;
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.15s ease;
+            }
+            
+            .notification-close:hover {
+                background: #f3f4f6;
+                color: #374151;
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+// Event listeners for modal closing
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
+});
+
+// Mobile menu toggle (for responsive design)
+function toggleMobileMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('active');
+}
+
+// Add mobile menu button if needed
+if (window.innerWidth <= 768) {
+    const mobileMenuBtn = document.createElement('button');
+    mobileMenuBtn.className = 'mobile-menu-btn';
+    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+    mobileMenuBtn.onclick = toggleMobileMenu;
+    
+    // Add button to header or create a mobile header
+    document.body.appendChild(mobileMenuBtn);
+}
+
+// Handle window resize
+window.addEventListener('resize', function() {
+    if (referenceMap) {
+        setTimeout(() => {
+            referenceMap.invalidateSize();
+        }, 100);
+    }
+});

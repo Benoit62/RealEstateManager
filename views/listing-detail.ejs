@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= listing.title %> - Real Estate Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container detail-view">
+        <!-- Header -->
+        <header class="detail-header">
+            <button class="btn btn-secondary" onclick="history.back()">
+                <i class="fas fa-arrow-left"></i> Retour
+            </button>
+            <h1><%= listing.title %></h1>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="editListing('<%= listing.id %>')">
+                    <i class="fas fa-edit"></i> Modifier
+                </button>
+                <button class="btn btn-danger" onclick="deleteListing('<%= listing.id %>')">
+                    <i class="fas fa-trash"></i> Supprimer
+                </button>
+            </div>
+        </header>
+
+        <div class="detail-content">
+            <div class="detail-main">
+                <!-- Appointment Banner -->
+                <% if (listing.appointment_date) { %>
+                <div class="appointment-banner priority">
+                    <i class="fas fa-calendar-check"></i>
+                    <div>
+                        <strong>Rendez-vous prévu</strong>
+                        <p><%= new Date(listing.appointment_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+                        <% if (listing.appointment_notes) { %>
+                        <p class="notes"><%= listing.appointment_notes %></p>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Images Gallery -->
+                <% if (listing.images && listing.images.length > 0) { %>
+                <div class="images-gallery">
+                    <div class="main-image">
+                        <img src="/uploads/<%= listing.images[0] %>" alt="Image principale" id="mainImage">
+                    </div>
+                    <% if (listing.images.length > 1) { %>
+                    <div class="thumbnails">
+                        <% listing.images.forEach((image, index) => { %>
+                        <img src="/uploads/<%= image %>" alt="Image <%= index + 1 %>" 
+                             class="thumbnail <%= index === 0 ? 'active' : '' %>"
+                             onclick="changeMainImage('/uploads/<%= image %>', this)">
+                        <% }) %>
+                    </div>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <!-- Property Details -->
+                <div class="property-details">
+                    <div class="details-grid">
+                        <% if (listing.type) { %>
+                        <div class="detail-item">
+                            <i class="fas fa-home"></i>
+                            <span>Type</span>
+                            <strong><%= listing.type %></strong>
+                        </div>
+                        <% } %>
+                        
+                        <% if (listing.size) { %>
+                        <div class="detail-item">
+                            <i class="fas fa-ruler"></i>
+                            <span>Surface</span>
+                            <strong><%= listing.size %> m²</strong>
+                        </div>
+                        <% } %>
+                        
+                        <% if (listing.rent) { %>
+                        <div class="detail-item">
+                            <i class="fas fa-euro-sign"></i>
+                            <span>Loyer</span>
+                            <strong><%= listing.rent %>€</strong>
+                        </div>
+                        <% } %>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-tag"></i>
+                            <span>Statut</span>
+                            <span class="status-badge status-<%= listing.status %>">
+                                <%= listing.status.replace('_', ' ') %>
+                            </span>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-globe"></i>
+                            <span>En ligne</span>
+                            <span class="<%= listing.online ? 'online' : 'offline' %>">
+                                <%= listing.online ? 'Oui' : 'Non' %>
+                            </span>
+                        </div>
+                    </div>
+
+                    <% if (listing.url) { %>
+                    <div class="external-link">
+                        <a href="<%= listing.url %>" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-external-link-alt"></i> Voir l'annonce originale
+                        </a>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Location and Map -->
+                <% if (listing.location || listing.address) { %>
+                <div class="location-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Localisation</h3>
+                    <% if (listing.location) { %>
+                    <p class="location-text"><%= listing.location %></p>
+                    <% } %>
+                    <% if (listing.address) { %>
+                    <p class="address-text"><%= listing.address %></p>
+                    <% } %>
+                    
+                    <% if (listing.latitude && listing.longitude) { %>
+                    <div class="map-container">
+                        <div id="listingMap"></div>
+                    </div>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <!-- Travel Times -->
+                <% if (referenceAddresses && referenceAddresses.length > 0) { %>
+                <div class="travel-times-section">
+                    <h3><i class="fas fa-clock"></i> Temps de trajet</h3>
+                    <div class="travel-times-grid">
+                        <% referenceAddresses.forEach(address => { %>
+                        <% const travelTime = travelTimes.find(tt => tt.reference_address_id === address.id) %>
+                        <div class="travel-time-card">
+                            <div class="destination">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <%= address.name %>
+                            </div>
+                            <div class="time">
+                                <% if (travelTime) { %>
+                                    <%= travelTime.travel_time %> min
+                                    <% if (travelTime.is_manual) { %>
+                                    <span class="manual">(manuel)</span>
+                                    <% } %>
+                                <% } else { %>
+                                    <button class="btn btn-outline calculate-btn" 
+                                            onclick="calculateTravelTime('<%= listing.id %>', '<%= address.id %>')">
+                                        Calculer
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Description -->
+                <% if (listing.description) { %>
+                <div class="description-section">
+                    <h3><i class="fas fa-align-left"></i> Description</h3>
+                    <div class="description-text">
+                        <%= listing.description %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Agency Contact -->
+                <% if (listing.agency_contact) { %>
+                <div class="contact-section">
+                    <h3><i class="fas fa-phone"></i> Contact agence</h3>
+                    <div class="contact-text">
+                        <%= listing.agency_contact %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Conditions -->
+                <% if (listing.conditions) { %>
+                <div class="conditions-section">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Conditions particulières</h3>
+                    <div class="conditions-text">
+                        <%= listing.conditions %>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Comments -->
+                <div class="comments-section">
+                    <h3><i class="fas fa-comments"></i> Commentaires personnels</h3>
+                    
+                    <form class="add-comment-form" onsubmit="addComment(event, '<%= listing.id %>')">
+                        <textarea placeholder="Ajouter un commentaire..." required></textarea>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Ajouter
+                        </button>
+                    </form>
+
+                    <div class="comments-list" id="commentsList">
+                        <% if (listing.comments && listing.comments.length > 0) { %>
+                            <% listing.comments.forEach(comment => { %>
+                            <div class="comment-item">
+                                <i class="fas fa-comment"></i>
+                                <span><%= comment %></span>
+                            </div>
+                            <% }) %>
+                        <% } else { %>
+                        <p class="no-comments">Aucun commentaire pour le moment.</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-sidebar">
+                <!-- Voting -->
+                <div class="voting-card">
+                    <h4>Note de l'annonce</h4>
+                    <div class="vote-controls large">
+                        <button class="vote-btn" onclick="vote('<%= listing.id %>', 'up')">
+                            <i class="fas fa-chevron-up"></i>
+                        </button>
+                        <span class="vote-count" id="voteCount"><%= listing.votes %></span>
+                        <button class="vote-btn" onclick="vote('<%= listing.id %>', 'down')">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="actions-card">
+                    <h4>Actions rapides</h4>
+                    <div class="quick-actions">
+                        <button class="btn btn-outline full-width" onclick="changeStatus('<%= listing.id %>')">
+                            <i class="fas fa-tag"></i> Changer le statut
+                        </button>
+                        <button class="btn btn-outline full-width" onclick="toggleOnline('<%= listing.id %>')">
+                            <i class="fas fa-globe"></i> <%= listing.online ? 'Marquer hors ligne' : 'Marquer en ligne' %>
+                        </button>
+                        <button class="btn btn-outline full-width" onclick="scheduleAppointment('<%= listing.id %>')">
+                            <i class="fas fa-calendar-plus"></i> Programmer un RDV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="metadata-card">
+                    <h4>Informations</h4>
+                    <div class="metadata-list">
+                        <div class="metadata-item">
+                            <span>Créée le</span>
+                            <strong><%= new Date(listing.created_at).toLocaleDateString('fr-FR') %></strong>
+                        </div>
+                        <div class="metadata-item">
+                            <span>Modifiée le</span>
+                            <strong><%= new Date(listing.updated_at).toLocaleDateString('fr-FR') %></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Initialisation de la carte si les coordonnées sont disponibles
+        <% if (listing.latitude && listing.longitude) { %>
+        document.addEventListener('DOMContentLoaded', function() {
+            const map = L.map('listingMap').setView([<%= listing.latitude %>, <%= listing.longitude %>], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([<%= listing.latitude %>, <%= listing.longitude %>])
+                .addTo(map)
+                .bindPopup('<%= listing.title %>')
+                .openPopup();
+        });
+        <% } %>
+    </script>
+</body>
+</html>

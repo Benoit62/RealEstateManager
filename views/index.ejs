@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire d'Annonces Immobilières</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-title">
+            <h1><i class="fas fa-home"></i> Real Estate Manager</h1>
+        </div>
+        <nav class="header-nav">
+            <a href="#" class="nav-item active" onclick="showSection('listings')">
+                <i class="fas fa-list"></i> Annonces
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('add-listing')">
+                <i class="fas fa-plus"></i> Ajouter une annonce
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('reference-addresses')">
+                <i class="fas fa-map-marker-alt"></i> Adresses de référence
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('appointments')">
+                <i class="fas fa-calendar"></i> Rendez-vous
+            </a>
+        </nav>
+    </header>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <section class="sidebar-map">
+            <div id="map" class="map"></div>
+        </section>
+
+        <section class="sidebar-addresses">
+            <h2 class="sidebar-section-title">Adresses de Référence</h2>
+            <div class="addresses-grid">
+                <% referenceAddresses.forEach(address => { %>
+                    <div class="small-address-card" data-id="<% address.id %>">
+                        <h3 class="address-card-title">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <%= address.name %>
+                        </h3>
+                        <p class="address-text"><%= address.address %></p>
+                    </div>
+                <% }) %>
+            </div>
+        </section>
+    </aside>
+    <main class="main">
+        <!-- Section Annonces -->
+        <section id="listings-section" class="content-section active">
+            <div class="section-header">
+                <h2>Mes Annonces</h2>
+                <div class="controls">
+                    <select class="sort-select" id="sortSelect" onchange="handleSort()">
+                        <option value="votes" <%= currentSort === 'votes' ? 'selected' : '' %>>Par votes</option>
+                        <option value="alphabetical" <%= currentSort === 'alphabetical' ? 'selected' : '' %>>Alphabétique</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="showSection('add-listing')">
+                        <i class="fas fa-plus"></i> Nouvelle annonce
+                    </button>
+                </div>
+            </div>
+
+            <div class="listings-grid">
+                <% listings.forEach(listing => { %>
+                <div class="listing-card" data-id="<%= listing.id %>">
+                    <div class="card-header">
+                        <div class="status-badge status-<%= listing.status %>">
+                            <%= listing.status.replace('_', ' ') %>
+                        </div>
+                        <div class="vote-controls">
+                            <button class="vote-btn" onclick="vote('<%= listing.id %>', 'up')">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                            <span class="vote-count"><%= listing.votes %></span>
+                            <button class="vote-btn" onclick="vote('<%= listing.id %>', 'down')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <% if (listing.appointment_date) { %>
+                    <div class="appointment-banner">
+                        <i class="fas fa-calendar-check"></i>
+                        RDV: <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                    </div>
+                    <% } %>
+
+                    <div class="card-content">
+                        <div class="card-media-line">
+                            <div class="card-title-images-side">
+                                <h3><a target="_blank" href="<%= listing.url %>"><%= listing.title %></a></h3>
+                                
+                                <% if (listing.images && listing.images.length > 0) { %>
+                                <div class="image-gallery">
+                                    <img src="/uploads/<%= listing.images[0] %>" alt="Image de l'annonce" class="main-image">
+                                    <% if (listing.images.length > 1) { %>
+                                    <div class="image-count">+<%= listing.images.length - 1 %></div>
+                                    <% } %>
+                                </div>
+                                <% } %>
+                            </div>
+                            <div class="card-address-map-side">
+                                <% if (listing.location || listing.address) { %>
+                                    
+                                    <% if (listing.location) { %>
+                                    <p class="location-text"><i class="fa-solid fa-circle location-marker"></i> <%= listing.location %></p>
+                                    <% } %>
+                                    <% if (listing.address) { %>
+                                    <p class="address-text"><i class="fas fa-map-marker-alt address-marker"></i> <%= listing.address %></p>
+                                    <% } %>
+                                    
+                                    <% if (listing.latitude && listing.longitude) { %>
+                                        <div class="map-container">
+                                            <div class="listing-map" id="listingMap<%= listing.id %>" 
+                                                data-id="<%= listing.id %>"
+                                                data-lat="<%= listing.latitude %>" 
+                                                data-lng="<%= listing.longitude %>"
+                                                data-title="<%= listing.title %>"></div>
+                                        </div>
+                                    <% } %>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+
+                        <div class="listing-details">
+                            <% if (listing.type) { %>
+                            <span class="detail-item"><i class="fas fa-home"></i> <%= listing.type %></span>
+                            <% } %>
+                            <% if (listing.size) { %>
+                            <span class="detail-item"><i class="fas fa-ruler"></i> <%= listing.size %> m²</span>
+                            <% } %>
+                            <% if (listing.price) { %>
+                            <span class="detail-item price"><i class="fas fa-euro-sign"></i> <%= listing.price %>€</span>
+                            <% } %>
+                            <% if (listing.online) { %>
+                                <span class="detail-item <%= listing.online ? 'online' : 'offline' %>"><i class="fas fa-globe"></i> <%= listing.online ? 'Oui' : 'Non' %></span>
+                            <% } %>
+                        </div>
+
+                        
+                        <% if (referenceAddresses && referenceAddresses.length > 0) { %>
+                            <div class="travel-times-section">
+                                <h3><i class="fas fa-clock"></i> Temps de trajet</h3>
+                                <div class="travel-times-grid">
+                                    <% referenceAddresses.forEach(address => { %>
+                                        <% const travelTime = listing.travel_times.find(tt => tt.reference_address_id === address.id) %>
+                                        <div class="travel-time-card">
+                                            <div class="destination">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                <%= address.name %>
+                                            </div>
+                                            <div class="time">
+                                                <% if (travelTime) { %>
+                                                    <%= travelTime.travel_time %> min
+                                                    <% if (travelTime.is_manual) { %>
+                                                    <span class="manual">(manuel)</span>
+                                                    <% } %>
+                                                <% } else { %>
+                                                    <button class="btn btn-outline calculate-btn" 
+                                                            onclick="calculateTravelTime('<%= listing.id %>', '<%= address.id %>')">
+                                                        Calculer
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    <% }) %>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+
+                        <% if (listing.comments && listing.comments.length > 0) { %>
+                        <div class="comments-preview">
+                            <div class="comment-item">
+                                <i class="fas fa-comment"></i> <%= listing.comments[0] %>
+                            </div>
+                            <% if (listing.comments.length > 1) { %>
+                            <div class="comment-count">+<%= listing.comments.length - 1 %> commentaires</div>
+                            <% } %>
+                        </div>
+                        <% } %>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn-secondary" onclick="viewListing('<%= listing.id %>')">
+                            <i class="fas fa-eye"></i> Voir détails
+                        </button>
+                        <button class="btn btn-outline" onclick="editListing('<%= listing.id %>')">
+                            <i class="fas fa-edit"></i> Modifier
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteListing('<%= listing.id %>')">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </section>
+
+        <!-- Section Ajout d'annonce -->
+        <section id="add-listing-section" class="content-section">
+            <div class="section-header">
+                <h2>Nouvelle Annonce</h2>
+            </div>
+
+            <form class="listing-form" id="addListingForm" action="/listing" method="POST" enctype="multipart/form-data">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="title">Titre de l'annonce *</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="url">URL de l'annonce</label>
+                        <input type="url" id="url" name="url" placeholder="https://...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">Type de logement</label>
+                        <select id="type" name="type">
+                            <option value="">Sélectionner...</option>
+                            <option value="Appartement">Appartement</option>
+                            <option value="Maison">Maison</option>
+                            <option value="Studio">Studio</option>
+                            <option value="Loft">Loft</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Localisation</label>
+                        <input type="text" id="location" name="location" placeholder="Quartier, ville...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Adresse précise</label>
+                        <input type="text" id="address" name="address" placeholder="Adresse complète">
+                        <button type="button" class="btn btn-secondary" onclick="geocodeAddress()">
+                            <i class="fas fa-map"></i> Géolocaliser
+                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="size">Surface (m²)</label>
+                        <input type="number" id="size" name="size" min="0" step="0.1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price">Loyer (€)</label>
+                        <input type="number" id="price" name="price" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Statut</label>
+                        <select id="status" name="status">
+                            <option value="a_contacter">À contacter</option>
+                            <option value="en_contact">En contact</option>
+                            <option value="rdv_prevu">RDV prévu</option>
+                            <option value="visite_faite">Visite faite</option>
+                            <option value="terminee">Terminée</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="images">Images</label>
+                        <input type="file" id="images" name="images" multiple accept="image/*">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appointment_date">Date de rendez-vous</label>
+                        <input type="datetime-local" id="appointment_date" name="appointment_date">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="4"></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="agency_contact">Contact agence</label>
+                        <textarea id="agency_contact" name="agency_contact" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="conditions">Conditions particulières</label>
+                        <textarea id="conditions" name="conditions" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="appointment_notes">Notes sur le rendez-vous</label>
+                        <textarea id="appointment_notes" name="appointment_notes" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer l'annonce
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="showSection('listings')">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Section Adresses de référence -->
+        <section id="reference-addresses-section" class="content-section">
+            <div class="section-header">
+                <h2>Adresses de Référence</h2>
+                <button class="btn btn-primary" onclick="showAddAddressModal()">
+                    <i class="fas fa-plus"></i> Ajouter une adresse
+                </button>
+            </div>
+
+            <div class="addresses-grid" id="addressesGrid">
+                <!-- Les adresses seront chargées dynamiquement -->
+            </div>
+
+            <div class="map-container">
+                <div id="referenceMap"></div>
+            </div>
+        </section>
+
+        <!-- Section Rendez-vous -->
+        <section id="appointments-section" class="content-section">
+            <div class="section-header">
+                <h2>Rendez-vous à venir</h2>
+            </div>
+
+            <div class="appointments-list">
+                <% listings.filter(l => l.appointment_date).forEach(listing => { %>
+                <div class="appointment-card">
+                    <div class="appointment-date">
+                        <i class="fas fa-calendar"></i>
+                        <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR') %>
+                        <span class="time"><%= new Date(listing.appointment_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
+                    </div>
+                    <div class="appointment-details">
+                        <h3><%= listing.title %></h3>
+                        <% if (listing.location) { %>
+                        <p><i class="fas fa-map-marker-alt"></i> <%= listing.location %></p>
+                        <% } %>
+                        <% if (listing.appointment_notes) { %>
+                        <p class="notes"><%= listing.appointment_notes %></p>
+                        <% } %>
+                    </div>
+                    <div class="appointment-actions">
+                        <button class="btn btn-secondary" onclick="viewListing('<%= listing.id %>')">
+                            Voir l'annonce
+                        </button>
+                    </div>
+                </div>
+                <% }) %>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modales -->
+    <div id="addAddressModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ajouter une adresse de référence</h3>
+                <button class="modal-close" onclick="closeModal('addAddressModal')">&times;</button>
+            </div>
+            <form id="addAddressForm">
+                <div class="form-group">
+                    <label for="addressName">Nom de l'adresse</label>
+                    <input type="text" id="addressName" name="name" required placeholder="Ex: Bureau, École...">
+                </div>
+                <div class="form-group">
+                    <label for="addressText">Adresse</label>
+                    <input type="text" id="addressText" name="address" required placeholder="Adresse complète">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addAddressModal')">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="/js/main.js"></script>
+</body>
+</html>
