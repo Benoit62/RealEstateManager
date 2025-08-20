@@ -117,7 +117,21 @@ class Database {
 
     // === MÉTHODES POUR LES ANNONCES ===
     
-    async getAllListings(sortBy = 'votes') {
+    async getAllListings() {
+        const query = `
+            SELECT l.*, 
+                GROUP_CONCAT(c.content, '|||') as comments,
+                COUNT(DISTINCT c.id) as comment_count
+            FROM listings l
+            LEFT JOIN comments c ON l.id = c.listing_id
+            GROUP BY l.id
+        `;
+
+        const listings = await this.all(query);
+        return listings.map(listing => this.processListingData(listing));
+    }
+
+    async getAllFullListings(sortBy = 'votes') {
         let orderBy = 'votes DESC';
         if (sortBy === 'alphabetical') {
             orderBy = 'title ASC';
@@ -136,7 +150,6 @@ class Database {
         `;
 
         const listings = await this.all(query);
-        
         return listings.map(listing => this.processListingData(listing));
     }
 
@@ -261,7 +274,26 @@ class Database {
     }
 
     // === MÉTHODES POUR LES TEMPS DE TRAJET ===
-    
+
+    async addTravelTime(listingId, referenceAddressId, travelTime, isManual = false) {
+        const query = `
+            INSERT INTO travel_times (listing_id, reference_address_id, travel_time, is_manual)
+            VALUES (?, ?, ?, ?)
+        `;
+        const params = [listingId, referenceAddressId, travelTime, isManual];
+        return await this.run(query, params);
+    }
+
+    async updateTravelTime(id, travelTime, isManual) {
+        const query = `
+            UPDATE travel_times
+            SET travel_time = ?, is_manual = ?
+            WHERE id = ?
+        `;
+        const params = [travelTime, isManual, id];
+        return await this.run(query, params);
+    }
+
     async getTravelTimesByListingId(listingId) {
         const query = `
             SELECT tt.*, ra.name as address_name

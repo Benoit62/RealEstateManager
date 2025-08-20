@@ -43,7 +43,7 @@ app.get('/', async (req, res) => {
         const sortBy = req.query.sort || 'votes';
         
         const [listings, referenceAddresses] = await Promise.all([
-            db.getAllListings(sortBy),
+            db.getAllFullListings(sortBy),
             db.getAllReferenceAddresses()
         ]);
 
