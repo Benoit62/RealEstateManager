@@ -491,7 +491,6 @@ header {
     gap: 8px;
     color: #10b981;
     font-weight: 600;
-    margin-bottom: 12px;
 }
 
 .appointment-date .time {
@@ -1080,7 +1079,7 @@ header {
     box-shadow: var(--shadow);
 }
 
-.listing-map {
+.listing-map, .reference-map {
     height: 100%;
     width: 100%;
 }
@@ -1375,7 +1374,7 @@ header {
 
 .appointment-card {
     background: white;
-    padding: var(--space-5);
+    padding: var(--space-2) var(--space-4);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     display: flex;
@@ -1547,10 +1546,6 @@ header {
         grid-template-columns: 1fr;
     }
     
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    
     .form-group.full-width {
         grid-column: span 1;
     }
@@ -1584,11 +1579,6 @@ header {
 
     .controls {
         justify-content: center;
-    }
-    
-    .appointment-card {
-        flex-direction: column;
-        text-align: center;
     }
     
     .addresses-grid {

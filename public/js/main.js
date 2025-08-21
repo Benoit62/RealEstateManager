@@ -251,16 +251,6 @@ function renderReferenceAddresses(addresses) {
     if (!grid) return;
     
     if (addresses.length === 0) {
-        grid.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-map-marker-alt"></i>
-                <h3>Aucune adresse de référence</h3>
-                <p>Ajoutez jusqu'à 4 adresses importantes pour calculer les temps de trajet.</p>
-                <button class="btn btn-primary" onclick="showAddAddressModal()">
-                    <i class="fas fa-plus"></i> Ajouter une adresse
-                </button>
-            </div>
-        `;
         return;
     }
     
