@@ -844,15 +844,15 @@ header {
 /* Forms */
 .listing-form {
     background: white;
-    padding: var(--space-8);
+    padding: var(--space-6);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
 }
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
 }
 
 .form-group {
@@ -867,6 +867,10 @@ header {
 
 .form-group.half-width {
     grid-column: span 1;
+}
+
+.form-group.quarter-width {
+    grid-column: span 1 / span 4;
 }
 
 .form-group label {
