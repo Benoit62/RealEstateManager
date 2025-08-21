@@ -784,6 +784,15 @@ header {
     margin-bottom: var(--space-2);
 }
 
+.phone-link {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.phone-link:hover {
+    text-decoration: underline;
+}
+
 /* Buttons */
 .btn {
     padding: var(--space-3) var(--space-4);
