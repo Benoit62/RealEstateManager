@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Image Downloader",
+    "version": "1.0",
+    "description": "Téléchargez facilement les images d'une page web",
+    "permissions": [
+        "activeTab",
+        "downloads",
+        "scripting"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Télécharger des images"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "image-downloader@test.local"
+        }
+    },
+    "icons": {
+        "128": "icons/icon128.png"
+    }
+}

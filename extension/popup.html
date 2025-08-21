@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Downloader</title>
+  <style>
+    body {
+      width: 360px;
+      min-height: 480px;
+      margin: 0;
+      padding: 16px;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f9fafb;
+      color: #333;
+    }
+
+    h3 {
+      margin: 0 0 12px 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      padding: 4px 6px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-scan { background: #2563eb; color: white; }
+    .btn-scan:hover { background: #1e4fd1; }
+
+    .btn-select-all { background: #f59e0b; color: white; }
+    .btn-select-all:hover { background: #d97706; }
+
+    .btn-download { background: #16a34a; color: white; }
+    .btn-download:disabled { background: #a1a1aa; cursor: not-allowed; }
+
+    .btn-clear { background: #dc2626; color: white; }
+    .btn-clear:hover { background: #b91c1c; }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+      max-height: 230px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .image-item {
+      position: relative;
+      border: 4px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .image-item img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-item.selected {
+      border-color: #16a34a;
+      transform: scale(1.03);
+    }
+
+    .image-size {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 11px;
+      padding: 2px;
+      text-align: center;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 13px;
+      margin-top: 10px;
+      color: #555;
+    }
+
+    .footer-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h3>📷 Image Downloader</h3>
+
+  <div class="card">
+    <div class="controls">
+      <div class="input-group">
+        Taille min: 
+        <input type="number" id="minWidth" value="100"> x
+        <input type="number" id="minHeight" value="100"> px
+      </div>
+      <button class="btn-scan" id="scanBtn">🔍 Scanner</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <button class="btn-select-all" id="selectAllBtn">✅ Tout sélectionner</button>
+      <button class="btn-clear" id="clearBtn">🗑️ Effacer</button>
+    </div>
+    <div id="imageGrid" class="image-grid"></div>
+  </div>
+
+  <div class="footer-buttons">
+    <button class="btn-download" id="downloadBtn" disabled>⬇️ Télécharger (0)</button>
+  </div>
+
+  <div id="status" class="status">Cliquez sur "Scanner" pour commencer</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

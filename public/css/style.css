@@ -284,6 +284,7 @@ header {
     align-items: center;
     padding: var(--space-2) var(--space-4);
     background: var(--gradient-light);
+    gap: 10px;
 }
 
 .status-badge {
@@ -348,11 +349,15 @@ header {
     color: #b91c1c;
 }
 
+.listing-title {
+    margin: var(--space-2) 0;
+    line-height: normal;
+}
+
 .listing-title a {
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--gray-800);
-    margin: var(--space-2) 0;
 }
 
 /* Modal de changement de statut */
@@ -1505,19 +1510,21 @@ header {
 }
 
 @media (max-width: 768px) {
+    .header-title-text {
+        display: none;
+    }
+
+    .nav-item-text {
+        display: none;
+    }
+
     .sidebar {
-        transform: translateX(-100%);
-        transition: transform var(--transition-normal);
+        display: none;
     }
     
-    .sidebar.active {
-        transform: translateX(0);
-    }
-    
-    .main-content {
-        margin-left: 0;
-        max-width: 100vw;
-        padding: var(--space-4);
+    .main {
+        width: 100%;
+        padding: var(--space-2) var(--space-1);
     }
     
     .listings-grid {
@@ -1542,18 +1549,25 @@ header {
         justify-content: center;
     }
     
-    .section-header {
-        flex-direction: column;
-        align-items: stretch;
-        text-align: center;
+    .section-header h2 {
+        font-size: 1.4rem;
     }
-    
+
+    .sort-select {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .listing-title a {
+        font-size: 0.9rem;
+        line-height: normal;
+    }
+
+    .vote-controls {
+        gap: var(--space-1);
+    }
+
     .controls {
         justify-content: center;
-    }
-    
-    .card-actions {
-        flex-direction: column;
     }
     
     .appointment-card {
