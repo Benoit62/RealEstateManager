@@ -20,7 +20,7 @@
                 <i class="fas fa-list"></i> <span class="nav-item-text">Annonces</span>
             </a>
             <a href="#" class="nav-item" onclick="showSection('add-listing')">
-                <i class="fas fa-plus"></i> <span class="nav-item-text">=Ajouter une annonce</span>
+                <i class="fas fa-plus"></i> <span class="nav-item-text">Ajouter une annonce</span>
             </a>
             <a href="#" class="nav-item" onclick="showSection('reference-addresses')">
                 <i class="fas fa-map-marker-alt"></i> <span class="nav-item-text">Adresses de référence</span>
@@ -68,6 +68,8 @@
                     <div class="card-header">
                         <%
                             const statusTexts = {
+                                'evaluating': 'En évaluation',
+                                'waiting_for_call': 'En attente d\'appel',
                                 'to_contact': 'À contacter',
                                 'contacting': 'En contact', 
                                 'apt': 'RDV prévu',
@@ -94,8 +96,8 @@
                     <div class="appointment-banner">
                         <p class="appointment-banner-txt"><i class="fas fa-calendar-check appointment-banner-icone"></i> RDV: <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
                         <p class="appointment-banner-notes"><%= listing.appointment_notes || '' %></p>
-                        <button class="btn btn-outline btn-warning" onclick="cancelAppointment('<%= listing.id %>')">
-                            <i class="fas fa-calendar-times"></i> Annuler le RDV
+                        <button class="btn btn-outline" onclick="cancelAppointment('<%= listing.id %>')">
+                            <i class="fas fa-calendar-times"></i> Annuler
                         </button>
                     </div>
                     <% } %>
@@ -333,6 +335,8 @@
                     <div class="form-group quarter-width">
                         <label for="status">Statut</label>
                         <select id="status" name="status">
+                            <option value="evaluating">En évaluation</option>
+                            <option value="waiting_for_call">En attente d'appel</option>
                             <option value="to_contact">À contacter</option>
                             <option value="contacting">En contact</option>
                             <option value="apt">RDV prévu</option>
@@ -402,33 +406,40 @@
         <!-- Section Rendez-vous -->
         <section id="appointments-section" class="content-section">
             <div class="section-header">
-                <h2>Rendez-vous à venir</h2>
+                <h2>Rendez-vous</h2>
+                <div class="calendar-controls">
+                    <button class="btn btn-outline" onclick="previousMonth()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="currentMonthYear"></span>
+                    <button class="btn btn-outline" onclick="nextMonth()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
 
-            <div class="appointments-list">
-                <% listings.filter(l => l.appointment_date).forEach(listing => { %>
-                <div class="appointment-card">
-                    <div class="appointment-date">
-                        <i class="fas fa-calendar"></i>
-                        <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR') %>
-                        <span class="time"><%= new Date(listing.appointment_date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) %></span>
-                    </div>
-                    <div class="appointment-details">
-                        <h3><%= listing.title %></h3>
-                        <% if (listing.location) { %>
-                        <p><i class="fas fa-map-marker-alt"></i> <%= listing.location %></p>
-                        <% } %>
-                        <% if (listing.appointment_notes) { %>
-                        <p class="notes"><%= listing.appointment_notes %></p>
-                        <% } %>
-                    </div>
-                    <div class="appointment-actions">
-                        <button class="btn btn-secondary" onclick="viewListing('<%= listing.id %>')">
-                            <i class="fas fa-eye"></i>
-                        </button>
+            <div class="appointments-layout">
+                <div class="calendar-container">
+                    <div class="calendar-grid" id="calendarGrid">
+                        <div class="calendar-header">Lun</div>
+                        <div class="calendar-header">Mar</div>
+                        <div class="calendar-header">Mer</div>
+                        <div class="calendar-header">Jeu</div>
+                        <div class="calendar-header">Ven</div>
+                        <div class="calendar-header">Sam</div>
+                        <div class="calendar-header">Dim</div>
+                        <!-- Les jours seront générés dynamiquement -->
                     </div>
                 </div>
-                <% }) %>
+
+                <div class="appointment-detail-container">
+                    <div id="appointmentDetail" class="appointment-detail-card">
+                        <div class="no-appointment-selected">
+                            <i class="fas fa-calendar-day"></i>
+                            <p>Sélectionnez une date pour voir les détails des rendez-vous</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -461,6 +472,12 @@
     
     <div id="statusModal" class="status-modal">
         <div class="status-options">
+            <button class="status-option" onclick="selectStatus('evaluating')">
+                <span class="status-badge status-evaluating">En évaluation</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('waiting_for_call')">
+                <span class="status-badge status-waiting_for_call">En attente d'appel</span>
+            </button>
             <button class="status-option" onclick="selectStatus('to_contact')">
                 <span class="status-badge status-to_contact">À contacter</span>
             </button>

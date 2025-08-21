@@ -53,6 +53,13 @@ function showSection(sectionName) {
             }
         }, 100);
     }
+
+    // Ajouter cette condition pour initialiser le calendrier
+    if (sectionName === 'appointments') {
+        setTimeout(() => {
+            initCalendar();
+        }, 100);
+    }
 }
 
 // Sorting function
@@ -815,6 +822,8 @@ async function selectStatus(newStatus) {
                     
                     // Mettre à jour le texte
                     const statusTexts = {
+                        'evaluating': 'En évaluation',
+                        'waiting_for_call': 'En attente d\'appel',
                         'to_contact': 'À contacter',
                         'contacting': 'En contact', 
                         'apt': 'RDV prévu',
@@ -1016,6 +1025,223 @@ async function cancelAppointment(listingId) {
         console.error('Error cancelling appointment:', error);
         showNotification(error.message, 'error');
     }
+}
+
+// Variables globales pour le calendrier
+let currentDate = new Date();
+let selectedDate = null;
+let appointmentsData = {}; // Sera populé avec les données des rendez-vous
+
+// Initialisation du calendrier
+function initCalendar() {
+    // Populate appointments data from server data
+    populateAppointmentsData();
+    renderCalendar();
+}
+
+async function populateAppointmentsData() {
+    // Cette fonction devra être adaptée selon vos données server-side
+    // Pour l'exemple, on simule avec les données existantes
+    // Récupérer les données depuis le serveur
+    let listings = [];
+    try {
+        const response = await fetch('/appointments');
+        listings = await response.json();
+    } catch (error) {
+        console.error('Error loading appointments:', error);
+    }
+    
+    listings.forEach(listing => {
+        // Clear existing appointments data
+        appointmentsData = {};
+        if (listing.appointment_date) {
+            const date = new Date(listing.appointment_date);
+            const dateKey = date.toDateString();
+            
+            if (!appointmentsData[dateKey]) {
+                appointmentsData[dateKey] = [];
+            }
+            
+            appointmentsData[dateKey].push({
+                id: listing.id,
+                title: listing.title,
+                time: date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                location: listing.location || listing.address,
+                notes: listing.appointment_notes,
+            });
+        }
+    });
+}
+
+function renderCalendar() {
+    const calendarGrid = document.getElementById('calendarGrid');
+    const currentMonthYear = document.getElementById('currentMonthYear');
+    
+    // Clear existing calendar days (keep headers)
+    const existingDays = calendarGrid.querySelectorAll('.calendar-day');
+    existingDays.forEach(day => day.remove());
+    
+    // Set month/year display
+    currentMonthYear.textContent = currentDate.toLocaleDateString('fr-FR', { 
+        month: 'long', 
+        year: 'numeric' 
+    });
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - (firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1));
+    
+    // Generate 42 days (6 weeks)
+    for (let i = 0; i < 42; i++) {
+        const cellDate = new Date(startDate);
+        cellDate.setDate(startDate.getDate() + i);
+        
+        const dayElement = createCalendarDay(cellDate);
+        calendarGrid.appendChild(dayElement);
+    }
+}
+
+function createCalendarDay(date) {
+    const day = document.createElement('div');
+    day.className = 'calendar-day';
+    day.onclick = () => selectDate(date);
+    
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+    const dateKey = date.toDateString();
+    const hasAppointments = appointmentsData[dateKey] && appointmentsData[dateKey].length > 0;
+    
+    if (!isCurrentMonth) day.classList.add('other-month');
+    if (isToday) day.classList.add('today');
+    if (hasAppointments) day.classList.add('has-appointment');
+    if (selectedDate && date.toDateString() === selectedDate.toDateString()) {
+        day.classList.add('selected');
+    }
+    
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'calendar-day-number';
+    dayNumber.textContent = date.getDate();
+    day.appendChild(dayNumber);
+    
+    if (hasAppointments) {
+        const indicator = document.createElement('div');
+        indicator.className = 'calendar-appointment-indicator';
+        indicator.textContent = `${appointmentsData[dateKey].length} RDV`;
+        day.appendChild(indicator);
+    }
+    
+    return day;
+}
+
+function selectDate(date) {
+    selectedDate = date;
+    renderCalendar();
+    displayAppointmentDetails(date);
+}
+
+function displayAppointmentDetails(date) {
+    const detailContainer = document.getElementById('appointmentDetail');
+    const dateKey = date.toDateString();
+    const appointments = appointmentsData[dateKey] || [];
+    
+    if (appointments.length === 0) {
+        detailContainer.innerHTML = `
+            <div class="no-appointment-selected">
+                <i class="fas fa-calendar-day"></i>
+                <p>Aucun rendez-vous prévu pour le ${date.toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="appointment-detail-header">
+            <div class="appointment-detail-date">
+                <i class="fas fa-calendar-check"></i>
+                ${date.toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })}
+            </div>
+            <span class="badge">${appointments.length} RDV</span>
+        </div>
+        <div class="appointment-detail-content">
+    `;
+    
+    appointments.forEach(appointment => {
+        html += `
+            <div class="appointment-item">
+                <div class="appointment-item-header">
+                    <div class="appointment-time">
+                        <i class="fas fa-clock"></i>
+                        ${appointment.time}
+                    </div>
+                    <div class="appointment-actions">
+                        <button class="btn btn-secondary" onclick="viewListing('${appointment.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-warning" onclick="cancelAppointment('${appointment.id}')">
+                            <i class="fas fa-calendar-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="appointment-title">
+                    <h4>${appointment.title}</h4>
+                    ${appointment.location ? `
+                        <div class="appointment-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${appointment.location}
+                        </div>
+                    ` : ''}
+                </div>
+                
+                ${appointment.notes ? `
+                    <div class="appointment-notes">${appointment.notes}</div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    detailContainer.innerHTML = html;
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+}
+
+// Initialiser le calendrier au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing initialization code...
+    
+    // Initialize calendar when appointments section is shown
+    if (document.getElementById('appointments-section')) {
+        initCalendar();
+    }
+});
+
+// Fonction à appeler quand la section appointments est affichée
+function showAppointmentsSection() {
+    showSection('appointments');
+    setTimeout(() => {
+        initCalendar();
+    }, 100);
 }
 
 // Fermer la modal avec Escape

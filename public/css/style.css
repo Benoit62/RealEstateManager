@@ -296,6 +296,16 @@ header {
     text-wrap: nowrap;
 }
 
+.status-evaluating {
+    background: #f0f9ff;
+    color: #5b21b6;
+}
+
+.status-waiting_for_call {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
 .status-to_contact {
     background: #dbeafe;
     color: #1d4ed8;
@@ -324,6 +334,10 @@ header {
 .status-offline {
     background: #fef2f2;
     color: #b91c1c;
+}
+
+.status-text-color-evaluating {
+    color: #5b21b6;
 }
 
 .status-text-color-to_contact {
@@ -515,10 +529,6 @@ header {
     padding: 8px 12px;
     border-radius: 6px;
     margin-top: 8px;
-}
-
-.appointment-actions {
-    margin-top: 12px;
 }
 
 .status-modal-overlay.active {
@@ -854,6 +864,17 @@ header {
 
 .btn-share:hover {
     background: darken(var(--primary), 5%);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-warning {
+    background: var(--warning);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.btn-warning:hover {
+    background-color: var(--error);
     box-shadow: var(--shadow-lg);
 }
 
@@ -1426,10 +1447,247 @@ header {
     color: var(--gray-500);
 }
 
-.appointment-actions {
+/* Calendar Styles */
+
+.calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.calendar-controls span {
+    font-weight: 600;
+    color: var(--gray-800);
+    min-width: 150px;
+    text-align: center;
+}
+
+.calendar-container {
+    background: white;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    margin-bottom: var(--space-2);
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.calendar-header {
+    background: var(--primary);
+    color: white;
+    padding: var(--space-2);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.calendar-day {
+    background: white;
+    min-height: 60px;
+    padding: var(--space-2);
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.calendar-day:hover {
+    background: var(--gray-50);
+}
+
+.calendar-day.other-month {
+    background: var(--gray-100);
+    color: var(--gray-400);
+}
+
+.calendar-day.today {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.calendar-day.selected {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-day.has-appointment {
+    background: linear-gradient(135deg, var(--secondary) 0%, white 100%);
+}
+
+.calendar-day.has-appointment.selected {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.calendar-day.has-appointment.selected .calendar-appointment-indicator {
+    color: #065f46;
+}
+
+.calendar-day.has-appointment::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+}
+
+.calendar-day-number {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.calendar-appointment-indicator {
+    font-size: 0.75rem;
+    color: var(--success);
+    margin-top: auto;
+}
+
+.appointment-detail-container {
+    position: sticky;
+    top: var(--space-4);
+}
+
+.appointment-detail-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+}
+
+.no-appointment-selected {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    color: var(--gray-500);
+    text-align: center;
+}
+
+.no-appointment-selected i {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+    color: var(--gray-300);
+}
+
+.appointment-detail-header {
+    padding: var(--space-4);
+    background: var(--gradient-light);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.appointment-detail-date {
+    display: flex;
+    align-items: center;
     gap: var(--space-2);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.appointment-detail-content {
+    padding: var(--space-1);
+}
+
+.appointment-item {
+    padding: var(--space-2);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.appointment-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.appointment-item:last-child {
+    border-bottom: none;
+}
+
+.appointment-time {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--success);
+    font-weight: 600;
+}
+
+.appointment-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.appointment-title h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: var(--space-2);
+}
+
+.appointment-location {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--gray-600);
+    margin-bottom: var(--space-2);
+    font-size: 0.8rem;
+}
+
+.appointment-notes {
+    background: var(--gray-100);
+    padding: var(--space-3);
+    border-radius: var(--radius);
+    color: var(--gray-700);
+    font-style: italic;
+    margin-bottom: var(--space-3);
+    font-size: 0.9rem;
+}
+
+.appointment-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.appointment-actions .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .appointments-layout {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+    
+    .appointment-detail-container {
+        position: static;
+    }
+    
+    .calendar-day {
+        min-height: 50px;
+        padding: var(--space-1);
+    }
+    
+    .calendar-controls span {
+        min-width: 120px;
+        font-size: 0.875rem;
+    }
 }
 
 /* Modals */
@@ -1548,6 +1806,7 @@ header {
 
     .form-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        padding: var(--space-2);
     }
     
     .form-group.full-width {

@@ -195,7 +195,7 @@ app.post('/listing/:id/status', async (req, res) => {
         const listingId = req.params.id;
         const { status } = req.body;
 
-        if (!['to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'].includes(status)) {
+        if (!['evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'].includes(status)) {
             return res.status(400).json({ error: 'Statut invalide' });
         }
 
@@ -231,6 +231,16 @@ app.delete('/listing/:id/appointment', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous' });
+    }
+});
+
+app.get('/appointments', async (req, res) => {
+    try {
+        const appointments = await db.getAllAppointments();
+        res.json(appointments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur' });
     }
 });
 

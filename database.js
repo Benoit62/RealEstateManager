@@ -83,7 +83,7 @@ class Database {
             conditions TEXT,
             dpe TEXT,
             heating TEXT,
-            status TEXT CHECK(status IN ('to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')) DEFAULT 'to_contact',
+            status TEXT CHECK(status IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')) DEFAULT 'to_contact',
             votes INTEGER DEFAULT 0,
             online BOOLEAN DEFAULT 1,
             appointment_date DATETIME,
@@ -256,6 +256,10 @@ class Database {
             'UPDATE listings SET appointment_date = ?, appointment_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
             [appointmentDate, appointmentNotes, id]
         );
+    }
+
+    async getAllAppointments() {
+        return await this.all('SELECT appointment_date, appointment_notes, id, title, location FROM listings WHERE appointment_date IS NOT NULL ORDER BY appointment_date');
     }
 
     // === MÉTHODES POUR LES ADRESSES DE RÉFÉRENCE ===
