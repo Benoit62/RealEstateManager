@@ -248,6 +248,30 @@
                         <% if (listing.agency_contact) { %>
                             <div class="agency-contact-line">
                                 <h3><i class="fas fa-building"></i> Contact Agence</h3>
+                                <%
+                                    // Parser to detect phone numbers in agency contact text
+                                    function parsePhoneNumbers(text) {
+                                        if (!text) return text;
+                                        
+                                        // Regex to match French phone numbers in various formats
+                                        const phoneRegex = /(\+33\s?[1-9](?:\s?\d{2}){4})|(\b0[1-9](?:\s?\d{2}){4}\b)|(\b0[1-9](?:[-.\s]?\d{2}){4}\b)/g;
+                                        
+                                        return text.replace(phoneRegex, function(match) {
+                                            // Clean the phone number (remove spaces, dots, dashes)
+                                            let cleanPhone = match.replace(/[\s.-]/g, '');
+                                            
+                                            // Convert French format to international if needed
+                                            if (cleanPhone.startsWith('0')) {
+                                                cleanPhone = '+33' + cleanPhone.substring(1);
+                                            }
+                                            
+                                            return `<a href="tel:${cleanPhone}" class="phone-link"><i class="fas fa-phone"></i> ${match}</a>`;
+                                        });
+                                    }
+                                %>
+                                <div class="agency-contact-text">
+                                    <%- parsePhoneNumbers(listing.agency_contact) %>
+                                </div>
                                 <div class="agency-contact-text">
                                     <%= listing.agency_contact %>
                                 </div>
