@@ -293,6 +293,7 @@ header {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: capitalize;
+    text-wrap: nowrap;
 }
 
 .status-to_contact {
