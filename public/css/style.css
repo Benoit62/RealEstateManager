@@ -846,6 +846,17 @@ header {
     justify-content: center;
 }
 
+.btn-share {
+    background: var(--primary);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.btn-share:hover {
+    background: darken(var(--primary), 5%);
+    box-shadow: var(--shadow-lg);
+}
+
 /* Forms */
 .listing-form {
     background: white;

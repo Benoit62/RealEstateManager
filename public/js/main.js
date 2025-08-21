@@ -142,6 +142,34 @@ async function deleteListing(listingId) {
     }
 }
 
+async function shareListing(listingId) {
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Annonce immobilière',
+                text: 'Découvrez cette annonce immobilière',
+                url: window.location.origin + `/#listing-${listingId}`
+            });
+            showNotification('Lien partagé avec succès', 'success');
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error sharing:', error);
+                showNotification('Erreur lors du partage', 'error');
+            }
+        }
+    } else {
+        // Fallback: copy to clipboard
+        const url = window.location.origin + `/#listing-${listingId}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            showNotification('Lien copié dans le presse-papier', 'success');
+        } catch (error) {
+            console.error('Error copying to clipboard:', error);
+            showNotification('Erreur lors de la copie', 'error');
+        }
+    }
+}
+
 // Comments functions
 async function addComment(event, listingId) {
     event.preventDefault();
