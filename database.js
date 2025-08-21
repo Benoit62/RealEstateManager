@@ -109,26 +109,6 @@ class Database {
             FOREIGN KEY (reference_address_id) REFERENCES reference_addresses (id) ON DELETE CASCADE
             )`
             ,
-                        // Add CHECK constraint for status column if it doesn't exist
-                        `CREATE TRIGGER IF NOT EXISTS validate_status_insert
-                         BEFORE INSERT ON listings
-                         FOR EACH ROW
-                         BEGIN
-                             SELECT CASE
-                                 WHEN NEW.status NOT IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')
-                                 THEN RAISE(ABORT, 'Invalid status value')
-                             END;
-                         END`,
-                        
-                        `CREATE TRIGGER IF NOT EXISTS validate_status_update
-                         BEFORE UPDATE ON listings
-                         FOR EACH ROW
-                         BEGIN
-                             SELECT CASE
-                                 WHEN NEW.status NOT IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')
-                                 THEN RAISE(ABORT, 'Invalid status value')
-                             END;
-                         END`
         ];
         //CHECK(status IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'))
 

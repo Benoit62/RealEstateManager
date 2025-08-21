@@ -244,6 +244,15 @@
                                 </div>
                             </div>
                         <% } %>
+
+                        <% if (listing.agency_contact) { %>
+                            <div class="agency-contact-line">
+                                <h3><i class="fas fa-building"></i> Contact Agence</h3>
+                                <div class="agency-contact-text">
+                                    <%= listing.agency_contact %>
+                                </div>
+                            </div>
+                        <% } %>
                     </div>
 
                     <div class="card-actions">
