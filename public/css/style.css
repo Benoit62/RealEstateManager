@@ -777,7 +777,7 @@ header {
     font-size: 0.7rem;
 }
 
-.travel-times-line, .description-line, .comments-line {
+.travel-times-line, .description-line, .comments-line, .agency-contact-line {
     background-color: var(--gray-50);
     border-radius: var(--radius);
     padding: var(--space-2) var(--space-4);
