@@ -65,9 +65,19 @@
                 <% listings.forEach(listing => { %>
                 <div id="listing-<%= listing.id %>" class="listing-card" data-id="<%= listing.id %>">
                     <div class="card-header">
+                        <%
+                            const statusTexts = {
+                                'to_contact': 'À contacter',
+                                'contacting': 'En contact', 
+                                'apt': 'RDV prévu',
+                                'visited': 'Visite faite',
+                                'ended': 'Terminée'
+                            };
+                        %>
                         <div class="status-badge status-<%= listing.status %>">
-                            <%= listing.status.replace('_', ' ') %>
+                            <%= statusTexts[listing.status] || listing.status.replace('_', ' ') %>
                         </div>
+                        <h3 class="listing-title"><a target="_blank" href="<%= listing.url %>"><%= listing.title %></a></h3>
                         <div class="vote-controls">
                             <button class="vote-btn" onclick="vote('<%= listing.id %>', 'up')">
                                 <i class="fas fa-chevron-up"></i>
@@ -81,31 +91,49 @@
 
                     <% if (listing.appointment_date) { %>
                     <div class="appointment-banner">
-                        <i class="fas fa-calendar-check"></i>
-                        RDV: <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+                        <p class="appointment-banner-txt"><i class="fas fa-calendar-check appointment-banner-icone"></i> RDV: <%= new Date(listing.appointment_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %></p>
+                        <p class="appointment-banner-notes"><%= listing.appointment_notes || '' %></p>
+                        <button class="btn btn-outline btn-warning" onclick="cancelAppointment('<%= listing.id %>')">
+                            <i class="fas fa-calendar-times"></i> Annuler le RDV
+                        </button>
                     </div>
                     <% } %>
 
                     <div class="card-content">
                         <div class="card-media-line">
                             <div class="card-title-images-side">
-                                <h3><a target="_blank" href="<%= listing.url %>"><%= listing.title %></a></h3>
-                                
+                                <% if (listing.location) { %>
+                                    <p class="location-text"><i class="fa-solid fa-circle location-marker"></i> <%= listing.location %></p>
+                                <% } %>
                                 <% if (listing.images && listing.images.length > 0) { %>
-                                <div class="image-gallery">
-                                    <img src="/uploads/<%= listing.images[0] %>" alt="Image de l'annonce" class="main-image">
-                                    <% if (listing.images.length > 1) { %>
-                                    <div class="image-count">+<%= listing.images.length - 1 %></div>
-                                    <% } %>
-                                </div>
+
+                                    <div class="image-gallery">
+                                        <div class="prev_btn" onclick="changeMainImageDirection('prev')">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </div>
+                                        <div class="next_btn" onclick="changeMainImageDirection('next')">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </div>
+                                        <div class="image-count"><%= listing.images.length %></div>
+                                        <div class="main-image">
+                                            <img src="/uploads/<%= listing.images[0] %>" alt="Image principale" id="mainImage" class="main-image">
+                                        </div>
+                                        <% if (listing.images.length > 1) { %>
+                                        <div class="thumbnails">
+                                            <% listing.images.forEach((image, index) => { %>
+                                            <img src="/uploads/<%= image %>" alt="Image <%= index + 1 %>" 
+                                                class="thumbnail <%= index === 0 ? 'active' : '' %>"
+                                                onclick="changeMainImage('/uploads/<%= image %>', this)">
+                                            <% }) %>
+                                        </div>
+                                        <% } %>
+                                    </div>
                                 <% } %>
                             </div>
                             <div class="card-address-map-side">
                                 <% if (listing.location || listing.address) { %>
                                     
-                                    <% if (listing.location) { %>
-                                    <p class="location-text"><i class="fa-solid fa-circle location-marker"></i> <%= listing.location %></p>
-                                    <% } %>
+                                    
                                     <% if (listing.address) { %>
                                     <p class="address-text"><i class="fas fa-map-marker-alt address-marker"></i> <%= listing.address %></p>
                                     <% } %>
@@ -120,6 +148,28 @@
                                         </div>
                                     <% } %>
                                 <% } %>
+                            </div>
+                            <div class="card-comment-side">
+                                <div class="comments-line">
+                                    <div class="comments-list" id="commentsList">
+                                        <% if (listing.comments && listing.comments.length > 0) { %>
+                                            <% listing.comments.forEach(comment => { %>
+                                            <div class="comment-item">
+                                                <i class="fas fa-comment"></i>
+                                                <span><%= comment %></span>
+                                            </div>
+                                            <% }) %>
+                                        <% } else { %>
+                                        <p class="no-comments">Aucun commentaire pour le moment.</p>
+                                        <% } %>
+                                    </div>
+                                    <form class="add-comment-form" onsubmit="addComment(event, '<%= listing.id %>')">
+                                        <textarea placeholder="Ajouter un commentaire..." required></textarea>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Ajouter
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                         
@@ -137,6 +187,9 @@
                             <% if (listing.online) { %>
                                 <span class="detail-item <%= listing.online ? 'online' : 'offline' %>"><i class="fas fa-globe"></i> <%= listing.online ? 'Oui' : 'Non' %></span>
                             <% } %>
+                            <% if (listing.rooms) { %>
+                                <span class="detail-item"><i class="fas fa-bed"></i> <%= listing.rooms %> chambres</span>
+                            <% } %>
                             <% if (listing.url) { %>
                                 <div class="external-link">
                                     <a href="<%= listing.url %>" target="_blank" class="btn btn-primary">
@@ -144,30 +197,6 @@
                                     </a>
                                 </div>
                             <% } %>
-                        </div>
-
-                        <div class="comments-line">
-                            <h3><i class="fas fa-comments"></i> Commentaires personnels</h3>
-                            
-                            <form class="add-comment-form" onsubmit="addComment(event, '<%= listing.id %>')">
-                                <textarea placeholder="Ajouter un commentaire..." required></textarea>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Ajouter
-                                </button>
-                            </form>
-
-                            <div class="comments-list" id="commentsList">
-                                <% if (listing.comments && listing.comments.length > 0) { %>
-                                    <% listing.comments.forEach(comment => { %>
-                                    <div class="comment-item">
-                                        <i class="fas fa-comment"></i>
-                                        <span><%= comment %></span>
-                                    </div>
-                                    <% }) %>
-                                <% } else { %>
-                                <p class="no-comments">Aucun commentaire pour le moment.</p>
-                                <% } %>
-                            </div>
                         </div>
 
                         
@@ -211,18 +240,6 @@
                                     <%= listing.description %>
                                 </div>
                             </div>
-                        <% } %>
-                        
-
-                        <% if (listing.comments && listing.comments.length > 0) { %>
-                        <div class="comments-preview">
-                            <div class="comment-item">
-                                <i class="fas fa-comment"></i> <%= listing.comments[0] %>
-                            </div>
-                            <% if (listing.comments.length > 1) { %>
-                            <div class="comment-count">+<%= listing.comments.length - 1 %> commentaires</div>
-                            <% } %>
-                        </div>
                         <% } %>
                     </div>
 
@@ -302,6 +319,11 @@
                     <div class="form-group">
                         <label for="price">Loyer (€)</label>
                         <input type="number" id="price" name="price" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rooms">Nombre de pièces</label>
+                        <input type="number" id="rooms" name="rooms" min="0" step="1">
                     </div>
 
                     <div class="form-group">
@@ -455,6 +477,33 @@
             <button class="status-option" onclick="selectStatus('ended')">
                 <span class="status-badge status-ended">Terminée</span>
             </button>
+        </div>
+    </div>
+
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Programmer un rendez-vous</h3>
+                <button class="modal-close" onclick="closeModal('appointmentModal')">&times;</button>
+            </div>
+            <form id="appointmentForm">
+                <div class="form-group">
+                    <label for="appointmentDate">Date et heure *</label>
+                    <input type="datetime-local" id="appointmentDate" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="appointmentNotes">Notes (optionnel)</label>
+                    <textarea id="appointmentNotes" name="notes" rows="3" placeholder="Notes sur le rendez-vous..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Programmer
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('appointmentModal')">
+                        Annuler
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     <script src="/js/main.js"></script>

@@ -207,6 +207,33 @@ app.post('/listing/:id/status', async (req, res) => {
     }
 });
 
+// === ROUTES POUR LES RENDEZ-VOUS ===
+app.post('/listing/:id/appointment', async (req, res) => {
+    try {
+        const listingId = req.params.id;
+        const { date, notes } = req.body;
+        if (!date) {
+            return res.status(400).json({ error: 'La date du rendez-vous est requise' });
+        }
+        await db.updateAppointment(listingId, date, notes);
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la mise à jour du rendez-vous' });
+    }
+});
+
+app.delete('/listing/:id/appointment', async (req, res) => {
+    try {
+        const listingId = req.params.id;
+        await db.updateAppointment(listingId, null, null); // Supprimer le rendez-vous
+        res.json({ success: true });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la suppression du rendez-vous' });
+    }
+});
+
 // === ROUTES POUR LES ADRESSES DE RÉFÉRENCE ===
 
 app.get('/api/reference-addresses', async (req, res) => {
@@ -277,7 +304,6 @@ app.post('/api/geocode', async (req, res) => {
         });
 
         if (response.data.features && response.data.features.length > 0) {
-            console.log(response.data.features);
             const feature = response.data.features[0];
             res.json({
                 latitude: feature.geometry.coordinates[1],

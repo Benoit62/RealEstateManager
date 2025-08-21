@@ -123,7 +123,7 @@ class Database {
                 GROUP_CONCAT(c.content, '|||') as comments,
                 COUNT(DISTINCT c.id) as comment_count
             FROM listings l
-            LEFT JOIN comments c ON l.id = c.listing_id
+            LEFT JOIN comments c ON l.id = c.listing_id ORDER BY id DESC
             GROUP BY l.id
         `;
 
@@ -228,6 +228,8 @@ class Database {
         return await this.run('DELETE FROM listings WHERE id = ?', [id]);
     }
 
+    // === MÉTHODES POUR LES VOTES ===
+
     async updateVotes(id, increment) {
         await this.run('UPDATE listings SET votes = votes + ? WHERE id = ?', [increment, id]);
         
@@ -245,6 +247,14 @@ class Database {
         return await this.run(
             'INSERT INTO comments (listing_id, content) VALUES (?, ?)',
             [listingId, content]
+        );
+    }
+
+    // === MÉTHODES POUR LES RENDEZ-VOUS ===
+    async updateAppointment(id, appointmentDate, appointmentNotes) {
+        return await this.run(
+            'UPDATE listings SET appointment_date = ?, appointment_notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [appointmentDate, appointmentNotes, id]
         );
     }
 
@@ -327,7 +337,7 @@ class Database {
         }
 
         if (listing.comments) {
-            listing.comments = listing.comments.split('|||').filter(comment => comment.trim());
+            listing.comments = listing.comments.split('|||').filter(comment => comment.trim()).reverse();
         } else {
             listing.comments = [];
         }

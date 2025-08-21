@@ -149,7 +149,7 @@ header {
 }
 
 .sidebar-section-title {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 900;
     margin-bottom: var(--space-4);
     color: var(--gray-800);
@@ -174,13 +174,17 @@ header {
     padding: var(--space-4);
     width: 100%;
     color: black;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
 }
 
 .overview-item {
     padding: var(--space-2) 0;
     border-bottom: 1px solid var(--gray-200);
-    font-weight: 900;
+    font-weight: 700;
     text-decoration: none;
+    line-height: normal;
 }
 
 /* Main */
@@ -226,7 +230,7 @@ header {
 }
 
 .section-header h2 {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 700;
     color: var(--gray-800);
     background: var(--gradient-primary);
@@ -285,7 +289,7 @@ header {
 .status-badge {
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: capitalize;
 }
@@ -344,6 +348,13 @@ header {
     color: #b91c1c;
 }
 
+.listing-title a {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: var(--space-2) 0;
+}
+
 /* Modal de changement de statut */
 .status-modal {
     position: absolute;
@@ -399,7 +410,7 @@ header {
     font-weight: 600;
     color: #374151;
     margin-bottom: 12px;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
 .status-options {
@@ -431,7 +442,7 @@ header {
 }
 
 .status-option-text {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: #374151;
 }
 
@@ -445,6 +456,64 @@ header {
     background: transparent;
     z-index: 999;
     display: none;
+}
+
+/* Modal de rendez-vous */
+.appointment-banner {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    border-radius: 0;
+}
+
+.appointment-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #10b981;
+    margin-bottom: 16px;
+}
+
+.appointment-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #10b981;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.appointment-date .time {
+    color: #6b7280;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.appointment-details h3 {
+    margin: 0 0 8px 0;
+    color: #1f2937;
+}
+
+.appointment-details p {
+    margin: 4px 0;
+    color: #6b7280;
+}
+
+.appointment-details .notes {
+    font-style: italic;
+    background: #f9fafb;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 8px;
+}
+
+.appointment-actions {
+    margin-top: 12px;
 }
 
 .status-modal-overlay.active {
@@ -487,11 +556,34 @@ header {
     background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
     color: white;
     padding: var(--space-3) var(--space-4);
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.appointment-banner-txt {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-weight: 600;
-    font-size: 0.875rem;
+}
+
+.appointment-banner-notes {
+    font-size: 0.7rem;
+    color: var(--gray-900);
+    margin-left: var(--space-4);
+}
+
+.appointment-banner-icone {
+    font-size: 1.4rem;
+}
+
+.appointment-banner .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.6rem;
+    color: var(--error);
+    border: 1px solid var(--error);
+
 }
 
 .appointment-banner.priority {
@@ -512,22 +604,22 @@ header {
 }
 
 .card-content {
-    padding: var(--space-5);
+    padding: var(--space-2);
 }
 
 .card-media-line {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
 }
 
 .card-title-images-side {
-    width: 48%;
+    width: 35%;
 }
 
 .card-content h3 {
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--gray-800);
     margin-bottom: var(--space-2);
@@ -536,14 +628,12 @@ header {
 
 .image-gallery {
     position: relative;
-    margin-bottom: var(--space-4);
 }
 
 .main-image {
-    width: 100%;
-    height: 300px;
-    object-fit: cover;
-    border-radius: var(--radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .image-count {
@@ -558,26 +648,49 @@ header {
     font-weight: 600;
 }
 
+.prev_btn, .next_btn {
+    position: absolute;
+    bottom: 50px;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.next_btn {
+    right: 10px;
+}
+
+.prev_btn {
+    left: 10px;
+}
+
 .card-address-map-side {
-    width: 48%;
+    width: 35%;
 }
 
 .location-marker {
     color: var(--secondary);
-    font-size: 120%;
+    font-size: 110%;
 }
 
 .address-marker {
     color: var(--primary);
-    font-size: 120%;
-}
+    font-size: 110%;
+} 
 
+.card-comment-side {
+    width: 27%;
+}
 
 .listing-details {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
 }
 
 .detail-item {
@@ -585,7 +698,7 @@ header {
     align-items: center;
     gap: var(--space-2);
     color: var(--gray-600);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
 .detail-item i {
@@ -603,7 +716,7 @@ header {
     gap: var(--space-2);
     color: var(--gray-600);
     margin-bottom: var(--space-4);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
 .location i {
@@ -620,7 +733,7 @@ header {
     display: flex;
     align-items: flex-start;
     gap: var(--space-2);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--gray-700);
 }
 
@@ -637,17 +750,22 @@ header {
 }
 
 .card-actions {
-    padding: var(--space-4);
+    padding: var(--space-2);
     background: var(--gray-50);
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
 }
 
+.card-actions .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.7rem;
+}
+
 .travel-times-line, .description-line, .comments-line {
     background-color: var(--gray-50);
     border-radius: var(--radius);
-    padding: var(--space-4);
+    padding: var(--space-2) var(--space-4);
     margin-bottom: var(--space-2);
 }
 
@@ -656,7 +774,7 @@ header {
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius);
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all var(--transition-fast);
     display: inline-flex;
@@ -844,29 +962,30 @@ header {
 }
 
 .main-image img {
-    width: 100%;
-    height: 400px;
-    object-fit: cover;
+    width: auto;
+    height: auto;
+    max-height: 130px;
     border-radius: var(--radius);
 }
 
 .thumbnails {
     display: flex;
-    gap: var(--space-3);
-    margin-top: var(--space-4);
-    overflow-x: auto;
-    padding-bottom: var(--space-2);
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    overflow-x: scroll;
+    overflow-y: hidden;
+    padding: 2px;
 }
 
 .thumbnail {
-    width: 80px;
-    height: 60px;
-    object-fit: cover;
+    width: auto;
+    height: 50px;
     border-radius: var(--radius);
     cursor: pointer;
     opacity: 0.7;
     transition: all var(--transition-fast);
     border: 2px solid transparent;
+    box-sizing: border-box;
 }
 
 .thumbnail:hover,
@@ -895,7 +1014,7 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    padding: var(--space-3);
+    padding: var(--space-1);
     background: var(--gray-50);
     border-radius: var(--radius);
 }
@@ -929,7 +1048,8 @@ header {
 
 /* Maps */
 .map-container {
-    height: 300px;
+    width: 100%;
+    height: 180px;
     border-radius: var(--radius);
     overflow: hidden;
     box-shadow: var(--shadow);
@@ -977,6 +1097,10 @@ header {
     line-height: 1.6;
 }
 
+.description-text {
+    font-size: 0.8rem;
+}
+
 /* Travel Times */
 .travel-times-grid {
     display: grid;
@@ -985,8 +1109,8 @@ header {
 }
 
 .travel-time-card {
-    padding: var(--space-4);
-    background: var(--gray-50);
+    padding: var(--space-1) var(--space-2);
+    background: var(--gray-200);
     border-radius: var(--radius);
     border: 1px solid var(--gray-200);
 }
@@ -1035,30 +1159,34 @@ header {
 /* Comments */
 .add-comment-form {
     display: flex;
-    gap: var(--space-3);
-    margin-bottom: var(--space-6);
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
 }
 
 .add-comment-form textarea {
     flex: 1;
-    padding: var(--space-3);
+    padding: var(--space-2);
     border: 1px solid var(--gray-300);
     border-radius: var(--radius);
     resize: vertical;
-    min-height: 80px;
+    min-height: 40px;
+    font-size: small;
+    resize: none;
 }
 
 .comments-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-1);
+    max-height: 150px;
+    overflow-y: scroll;
 }
 
 .comment-item {
     display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-3);
+    align-items: center;
+    gap: var(--space-2);
     background: var(--gray-50);
     border-radius: var(--radius);
 }
@@ -1088,7 +1216,7 @@ header {
 .voting-card h4,
 .actions-card h4,
 .metadata-card h4 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--gray-800);
     margin-bottom: var(--space-4);
@@ -1178,7 +1306,7 @@ header {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--gray-800);
     margin-bottom: var(--space-3);
@@ -1251,12 +1379,6 @@ header {
     color: var(--primary);
     font-size: 1.5rem;
     margin-bottom: var(--space-2);
-}
-
-.time {
-    font-weight: 700;
-    color: var(--primary);
-    margin-top: var(--space-1);
 }
 
 .appointment-details {

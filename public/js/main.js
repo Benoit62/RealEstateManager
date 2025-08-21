@@ -146,7 +146,8 @@ async function deleteListing(listingId) {
 async function addComment(event, listingId) {
     event.preventDefault();
     
-    const textarea = event.target.querySelector('textarea');
+    const form = event.target;
+    const textarea = form.querySelector('textarea');
     const content = textarea.value.trim();
     
     if (!content) {
@@ -164,8 +165,9 @@ async function addComment(event, listingId) {
         });
         
         if (response.ok) {
-            // Add comment to DOM
-            const commentsList = document.getElementById('commentsList');
+            // Trouver la liste des commentaires dans le même conteneur que le formulaire
+            const commentsLine = form.closest('.comments-line');
+            const commentsList = commentsLine.querySelector('.comments-list');
             const noCommentsMsg = commentsList.querySelector('.no-comments');
             
             if (noCommentsMsg) {
@@ -182,7 +184,8 @@ async function addComment(event, listingId) {
             // Add animation
             commentDiv.style.opacity = '0';
             commentDiv.style.transform = 'translateX(-20px)';
-            commentsList.appendChild(commentDiv);
+            commentDiv.style.transition = 'all 0.3s ease';
+            commentsList.insertBefore(commentDiv, commentsList.firstChild);
             
             setTimeout(() => {
                 commentDiv.style.opacity = '1';
@@ -343,33 +346,33 @@ async function deleteAddress(addressId) {
 }
 
 function initializeListingMap() {
-    const mapElements = document.getElementsByClassName("listing-map");
-    if (!mapElements) return;
+    const mapElements = document.querySelectorAll('.listing-map');
+    if (!mapElements.length) return;
 
-    for (let i = 0; i < mapElements.length; i++) {
-        const element = mapElements[i];
-        // Process each map element
-
+    mapElements.forEach(element => {
         const lat = parseFloat(element.dataset.lat);
         const lng = parseFloat(element.dataset.lng);
         const title = element.dataset.title;
         const mapId = element.id;
 
-        if (!lat || !lng) return;
+        if (!lat || !lng || !mapId) return;
 
         console.log("Initializing map for listing:", mapId, "at coordinates:", lat, lng);
-        if (document.getElementById(mapId)) {
-            console.log("Initializing map for listing:", mapId);
-            const map = L.map(mapId).setView([lat, lng], 15);
+        
+        // Vérifier que l'élément existe et n'a pas déjà été initialisé
+        if (element && !element.hasAttribute('data-map-initialized')) {
+            const map = L.map(mapId).setView([lat, lng], 10);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
             L.marker([lat, lng])
                 .addTo(map)
-                .openPopup();
+            
+            // Marquer comme initialisé
+            element.setAttribute('data-map-initialized', 'true');
         }
-    }
+    });
 }
 
 // Form handlers
@@ -512,21 +515,64 @@ async function calculateTravelTime(listingId, addressId) {
 
 // Detail page functions
 function changeMainImage(src, thumbnail) {
-    const mainImage = document.getElementById('mainImage');
+    // Trouver la galerie parent de la miniature
+    const gallery = thumbnail.closest('.image-gallery');
+    if (!gallery) return;
+    
+    const mainImage = gallery.querySelector('.main-image img');
     if (mainImage) {
         mainImage.src = src;
         
-        // Update thumbnail active state
-        document.querySelectorAll('.thumbnail').forEach(thumb => {
+        // Update thumbnail active state dans cette galerie seulement
+        gallery.querySelectorAll('.thumbnail').forEach(thumb => {
             thumb.classList.remove('active');
         });
         thumbnail.classList.add('active');
     }
 }
 
-function changeStatus(listingId) {
-    // Implementation for changing status
-    showNotification('Fonction de changement de statut en développement', 'info');
+let currentImageIndex = 0;
+function changeMainImageDirection(direction) {
+    // Trouver la galerie à partir du bouton cliqué
+    const button = event.target.closest('.prev_btn, .next_btn');
+    const gallery = button.closest('.image-gallery');
+    if (!gallery) return;
+    
+    const thumbnails = gallery.querySelectorAll('.thumbnail');
+    const activeThumbnail = gallery.querySelector('.thumbnail.active');
+    const total = thumbnails.length;
+    
+    if (total === 0) return;
+    
+    let currentImageIndex = Array.from(thumbnails).indexOf(activeThumbnail);
+    
+    if (direction === 'next') {
+        currentImageIndex = (currentImageIndex + 1) % total;
+    } else if (direction === 'prev') {
+        currentImageIndex = (currentImageIndex - 1 + total) % total;
+    }
+
+    navigateToImage(gallery, currentImageIndex);
+}
+
+function navigateToImage(gallery, index) {
+    const thumbnails = gallery.querySelectorAll('.thumbnail');
+    const total = thumbnails.length;
+
+    // Ensure index is within bounds
+    if (index < 0 || index >= total) return;
+
+    // Change main image
+    const mainImage = gallery.querySelector('.main-image img');
+    if (mainImage) {
+        mainImage.src = thumbnails[index].src;
+    }
+
+    // Update thumbnail active state
+    thumbnails.forEach(thumb => {
+        thumb.classList.remove('active');
+    });
+    thumbnails[index].classList.add('active');
 }
 
 function toggleOnline(listingId) {
@@ -747,14 +793,15 @@ async function selectStatus(newStatus) {
                     
                     // Ajouter la nouvelle classe de statut
                     statusBadge.classList.add(`status-${newStatus}`);
+                    statusBadge.classList.add(`status-badge`);
                     
                     // Mettre à jour le texte
                     const statusTexts = {
-                        'a_contacter': 'À contacter',
-                        'en_contact': 'En contact', 
-                        'rdv_prevu': 'RDV prévu',
-                        'visite_faite': 'Visite faite',
-                        'terminee': 'Terminée'
+                        'to_contact': 'À contacter',
+                        'contacting': 'En contact', 
+                        'apt': 'RDV prévu',
+                        'visited': 'Visite faite',
+                        'ended': 'Terminée'
                     };
                     
                     statusBadge.textContent = statusTexts[newStatus] || newStatus;
@@ -792,6 +839,166 @@ document.addEventListener('click', function(e) {
         closeStatusModal();
     }
 });
+
+let currentAppointmentListingId = null;
+
+// Fonction pour ouvrir la modal de rendez-vous
+function scheduleAppointment(listingId) {
+    currentAppointmentListingId = listingId;
+    
+    // Pré-remplir avec la date existante si elle existe
+    const listingCard = document.querySelector(`[data-id="${listingId}"]`);
+    const existingAppointment = listingCard.querySelector('.appointment-banner');
+    
+    const modal = document.getElementById('appointmentModal');
+    const dateInput = document.getElementById('appointmentDate');
+    const notesInput = document.getElementById('appointmentNotes');
+    
+    // Reset form
+    document.getElementById('appointmentForm').reset();
+    
+    // Si un RDV existe déjà, extraire les informations
+    if (existingAppointment) {
+        // Cette partie nécessiterait d'avoir les données depuis le serveur
+        // Pour l'instant on laisse vide pour permettre la modification
+    }
+    
+    // Set minimum date to now
+    const now = new Date();
+    const minDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    dateInput.min = minDate;
+    
+    modal.classList.add('active');
+    dateInput.focus();
+}
+
+// Gestionnaire de soumission du formulaire de rendez-vous
+document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!currentAppointmentListingId) return;
+    
+    const formData = new FormData(e.target);
+    const appointmentData = {
+        date: formData.get('date'),
+        notes: formData.get('notes') || ''
+    };
+    
+    try {
+        showNotification('Programmation du rendez-vous...', 'info');
+        
+        const response = await fetch(`/listing/${currentAppointmentListingId}/appointment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(appointmentData)
+        });
+        
+        if (response.ok) {
+            await updateAppointmentDisplay(currentAppointmentListingId, appointmentData);
+            closeModal('appointmentModal');
+            showNotification('Rendez-vous programmé avec succès', 'success');
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erreur lors de la programmation');
+        }
+    } catch (error) {
+        console.error('Error scheduling appointment:', error);
+        showNotification(error.message, 'error');
+    }
+});
+
+// Fonction pour mettre à jour l'affichage du rendez-vous
+async function updateAppointmentDisplay(listingId, appointmentData) {
+    const listingCard = document.querySelector(`[data-id="${listingId}"]`);
+    if (!listingCard) return;
+    
+    // Supprimer l'ancienne bannière de RDV si elle existe
+    const existingBanner = listingCard.querySelector('.appointment-banner');
+    if (existingBanner) {
+        existingBanner.remove();
+    }
+    
+    // Créer la nouvelle bannière
+    const appointmentDate = new Date(appointmentData.date);
+    const formattedDate = appointmentDate.toLocaleDateString('fr-FR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    const banner = document.createElement('div');
+    banner.className = 'appointment-banner';
+    banner.innerHTML = `
+        <i class="fas fa-calendar-check"></i>
+        RDV: ${formattedDate}
+    `;
+    
+    // Ajouter après le card-header
+    const cardHeader = listingCard.querySelector('.card-header');
+    cardHeader.insertAdjacentElement('afterend', banner);
+    
+    // Animation d'apparition
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateY(-10px)';
+    banner.style.transition = 'all 0.3s ease';
+    
+    setTimeout(() => {
+        banner.style.opacity = '1';
+        banner.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Mettre à jour le bouton de programmation
+    const scheduleBtn = listingCard.querySelector('[onclick*="scheduleAppointment"]');
+    if (scheduleBtn) {
+        scheduleBtn.innerHTML = '<i class="fas fa-calendar-edit"></i> Modifier le RDV';
+    }
+}
+
+// Fonction pour annuler un rendez-vous
+async function cancelAppointment(listingId) {
+    if (!confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?')) {
+        return;
+    }
+    
+    try {
+        showNotification('Annulation du rendez-vous...', 'info');
+        
+        const response = await fetch(`/listing/${listingId}/appointment`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // Supprimer la bannière de RDV
+            const listingCard = document.querySelector(`[data-id="${listingId}"]`);
+            const appointmentBanner = listingCard.querySelector('.appointment-banner');
+            
+            if (appointmentBanner) {
+                appointmentBanner.style.opacity = '0';
+                appointmentBanner.style.transform = 'translateY(-10px)';
+                setTimeout(() => appointmentBanner.remove(), 300);
+            }
+            
+            // Remettre le bouton original
+            const scheduleBtn = listingCard.querySelector('[onclick*="scheduleAppointment"]');
+            if (scheduleBtn) {
+                scheduleBtn.innerHTML = '<i class="fas fa-calendar-plus"></i> Programmer un RDV';
+            }
+            
+            showNotification('Rendez-vous annulé avec succès', 'success');
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Erreur lors de l\'annulation');
+        }
+    } catch (error) {
+        console.error('Error cancelling appointment:', error);
+        showNotification(error.message, 'error');
+    }
+}
 
 // Fermer la modal avec Escape
 document.addEventListener('keydown', function(e) {
