@@ -1545,6 +1545,10 @@ header {
     .listings-grid {
         grid-template-columns: 1fr;
     }
+
+    .form-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
     
     .form-group.full-width {
         grid-column: span 1;
