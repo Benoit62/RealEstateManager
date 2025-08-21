@@ -83,7 +83,7 @@ class Database {
             conditions TEXT,
             dpe TEXT,
             heating TEXT,
-            status TEXT CHECK(status IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline')) DEFAULT 'to_contact',
+            status TEXT DEFAULT 'to_contact',
             votes INTEGER DEFAULT 0,
             online BOOLEAN DEFAULT 1,
             appointment_date DATETIME,
@@ -109,6 +109,7 @@ class Database {
             FOREIGN KEY (reference_address_id) REFERENCES reference_addresses (id) ON DELETE CASCADE
             )`
         ];
+        //CHECK(status IN ('evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'))
 
         queries.forEach(query => {
             this.db.run(query);
