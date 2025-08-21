@@ -192,7 +192,7 @@ class Database {
             url, title, type, location, address,
             latitude || null, longitude || null, images,
             size || null, price || null, description, agency_contact, conditions,
-            status || 'a_contacter', appointment_date || null, appointment_notes
+            status || 'to_contact', appointment_date || null, appointment_notes
         ];
 
         return await this.run(query, params);

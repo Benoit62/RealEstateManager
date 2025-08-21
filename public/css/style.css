@@ -865,6 +865,10 @@ header {
     grid-column: span 2;
 }
 
+.form-group.half-width {
+    grid-column: span 1;
+}
+
 .form-group label {
     font-weight: 600;
     color: var(--gray-700);
