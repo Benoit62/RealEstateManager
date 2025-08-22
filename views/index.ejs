@@ -71,6 +71,7 @@
                                 'evaluating': 'En évaluation',
                                 'waiting_for_call': 'En attente d\'appel',
                                 'to_contact': 'À contacter',
+                                'to_recontact': 'À recontacter',
                                 'contacting': 'En contact', 
                                 'apt': 'RDV prévu',
                                 'visited': 'Visite faite',
@@ -368,6 +369,7 @@
                             <option value="evaluating">En évaluation</option>
                             <option value="waiting_for_call">En attente d'appel</option>
                             <option value="to_contact">À contacter</option>
+                            <option value="to_recontact">À recontacter</option>
                             <option value="contacting">En contact</option>
                             <option value="apt">RDV prévu</option>
                             <option value="visited">Visite faite</option>
@@ -510,6 +512,9 @@
             </button>
             <button class="status-option" onclick="selectStatus('to_contact')">
                 <span class="status-badge status-to_contact">À contacter</span>
+            </button>
+            <button class="status-option" onclick="selectStatus('to_recontact')">
+                <span class="status-badge status-to_recontact">À recontacter</span>
             </button>
             <button class="status-option" onclick="selectStatus('contacting')">
                 <span class="status-badge status-contacting">En contact</span>

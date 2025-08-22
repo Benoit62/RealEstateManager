@@ -825,6 +825,7 @@ async function selectStatus(newStatus) {
                         'evaluating': 'En évaluation',
                         'waiting_for_call': 'En attente d\'appel',
                         'to_contact': 'À contacter',
+                        'to_recontact': 'À recontacter',
                         'contacting': 'En contact', 
                         'apt': 'RDV prévu',
                         'visited': 'Visite faite',

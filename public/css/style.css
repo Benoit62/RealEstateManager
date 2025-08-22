@@ -311,6 +311,11 @@ header {
     color: #1d4ed8;
 }
 
+.status-to_recontact {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
 .status-contacting {
     background: #ffeb9d;
     color: #92400e;
@@ -342,6 +347,10 @@ header {
 
 .status-text-color-to_contact {
     color: #1d4ed8;
+}
+
+.status-text-color-to_recontact {
+    color: #0369a1;
 }
 
 .status-text-color-contacting {

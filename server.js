@@ -195,7 +195,7 @@ app.post('/listing/:id/status', async (req, res) => {
         const listingId = req.params.id;
         const { status } = req.body;
 
-        if (!['evaluating', 'waiting_for_call', 'to_contact', 'contacting', 'apt', 'visited', 'ended', 'offline'].includes(status)) {
+        if (!['evaluating', 'waiting_for_call', 'to_contact', 'to_recontact', 'contacting', 'apt', 'visited', 'ended', 'offline'].includes(status)) {
             return res.status(400).json({ error: 'Statut invalide' });
         }
 
