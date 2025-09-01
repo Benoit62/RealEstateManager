@@ -1052,9 +1052,9 @@ async function populateAppointmentsData() {
         console.error('Error loading appointments:', error);
     }
     
+    appointmentsData = {};
     listings.forEach(listing => {
         // Clear existing appointments data
-        appointmentsData = {};
         if (listing.appointment_date) {
             const date = new Date(listing.appointment_date);
             const dateKey = date.toDateString();
