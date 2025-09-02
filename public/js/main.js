@@ -107,7 +107,7 @@ async function vote(listingId, direction) {
 
 // Listing management functions
 function viewListing(listingId) {
-    window.location.href = `/listing/${listingId}`;
+    window.location.href = `/#listing-${listingId}`;
 }
 
 function editListing(listingId) {
